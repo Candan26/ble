@@ -150,8 +150,9 @@ static void SMART_WATCH_HumidityChange_Timer_Callback(void){
 static void SMART_WATCH_TemparetureChange_Timer_Callback(void) {
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_TEMPERATURE, CFG_SCH_PRIO_0);
 	static unsigned char value[2];
-	value[0]++;
-	value[1]++;
+
+	value[0]=ucGetAd8232AnalogValue();
+	value[1]=value[0];
 	SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value); //TODO
 }
 static void SMART_WATCH_context_Init(void) {

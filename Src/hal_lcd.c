@@ -6,6 +6,30 @@
 
 static char tempLcdBuffer[32];
 
+//TODO CANDAN EDITION
+unsigned short usBpmPoslastX;
+unsigned short usBpmPoslastY;
+unsigned short usBpmPosX;
+unsigned short usBpmPosY;
+int postorier=10;
+int percentageOfReduction=5;
+
+void LCD_BLE_CS_PrintBPM(int analogValue){
+	if(usBpmPosX> 127 || usBpmPosX==0 ){
+		SSD1306_Fill(SSD1306_COLOR_BLACK);
+		SSD1306_UpdateScreen();
+		usBpmPosX=1;
+		usBpmPoslastX=usBpmPosX;
+	}
+	unsigned char tmpVal=analogValue;
+	usBpmPosY= postorier+(tmpVal*(0.2509)/percentageOfReduction); //60-(analogValue/10);
+	SSD1306_DrawLine(usBpmPoslastX,usBpmPoslastY,usBpmPosX,usBpmPosY,SSD1306_COLOR_WHITE);
+	SSD1306_UpdateScreen();
+	usBpmPoslastX=usBpmPosX;
+	usBpmPoslastY=usBpmPosY;
+	usBpmPosX++;
+}
+
 void LCD_Init(void)
 {
 	SSD1306_Init();
@@ -129,14 +153,14 @@ void LCD_THREAD_PrintRole(char * role)
   SSD1306_DrawFilledRectangle(0,20,80,12,SSD1306_COLOR_BLACK);
   SSD1306_DrawFilledRectangle(0,20,5 + (strlen(role) * 7),12,SSD1306_COLOR_WHITE);
   SSD1306_GotoXY(3,22);
-  SSD1306_Puts(role, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts(role, &Font_7x10, SSD1306_COLOR_BLACK);
   SSD1306_UpdateScreen();
 }
 
 void LCD_BLE_PrintLocalName(const char * name)
 {
   SSD1306_DrawFilledRectangle(31,0,80,19,SSD1306_COLOR_BLACK);
-  SSD1306_GotoXY(31,0);
+  SSD1306_GotoXY(31,10);
   SSD1306_Puts(name + 1, &Font_11x18, SSD1306_COLOR_WHITE);
   SSD1306_UpdateScreen();
 }

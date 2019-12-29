@@ -5,6 +5,7 @@
 #include "scheduler.h"
 
 //
+#include "hal_lcd.h"
 #include "smart_watch_stm.h"
 /* Private typedef -----------------------------------------------------------*/
 typedef union {
@@ -14,6 +15,11 @@ typedef union {
 	int i;
 	float f;
 } unionTypeDef;
+
+typedef union {
+	unsigned short us;
+	unsigned char uc[2];
+}ShortUnionTypeDef;
 
 typedef struct {
 	uint16_t usTimeStamp;
@@ -150,9 +156,11 @@ static void SMART_WATCH_HumidityChange_Timer_Callback(void){
 static void SMART_WATCH_TemparetureChange_Timer_Callback(void) {
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_TEMPERATURE, CFG_SCH_PRIO_0);
 	static unsigned char value[2];
-
-	value[0]=ucGetAd8232AnalogValue();
-	value[1]=value[0];
+	ShortUnionTypeDef tmpVal;
+	tmpVal.us = usGetAd8232AnalogValue();
+	LCD_BLE_CS_PrintBPM(tmpVal.uc[0]);
+	value[0]=tmpVal.uc[0];
+	value[1]=tmpVal.uc[1];
 	SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value); //TODO
 }
 static void SMART_WATCH_context_Init(void) {

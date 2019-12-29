@@ -28,5 +28,8 @@ void LCD_BLE_HRS_PrintBPM(uint8_t BPM);
 void LCD_BLE_HTS_PrintTemperature(uint8_t temperature);
 void LCD_BLE_TPS_PrintRSSI(uint8_t RSSI);
 
+//TODO candan edition LCD
+void LCD_BLE_CS_PrintBPM(int analogValue);
+
 #endif /* __HAL_LCD_H */
 /* USER CODE END */

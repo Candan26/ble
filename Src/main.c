@@ -69,15 +69,24 @@ static void MX_RF_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
-volatile static  unsigned int uiAd8232AnalogConvertedValue=0;
-volatile static  unsigned char ucAd8232AnalogConvertedValue=0;
+volatile static unsigned int uiAd8232AnalogConvertedValue = 0;
+volatile static unsigned char ucAd8232AnalogConvertedValue = 0;
+volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 
 static unsigned int uiAD8232Values = 0;
 unsigned int ADC_TIMEOUT = 300;
 unsigned char isResponseFinished = 1;
-unsigned int uiAd8232MaxValue=4000;
+unsigned int uiAd8232MaxValue = 4000;
 
 #define fCons  0xff/uiAd8232MaxValue
+
+typedef union {
+	float f;
+	unsigned char uc[4];
+	unsigned short us[2];
+	unsigned int ui;
+} DataConverterTypeDef;
+DataConverterTypeDef dataConverter;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -162,17 +171,20 @@ void systemInit(void) {
 	initInterrupts();
 }
 
+void vSetAd8232AnalogValue(unsigned int value) {
 
-void vSetAd8232AnalogValue(unsigned int value){
-
-	uiAd8232AnalogConvertedValue=value;
-	ucAd8232AnalogConvertedValue=(unsigned char )((float)fCons*value);
+	uiAd8232AnalogConvertedValue = value;
+	usAd8232AnalogConvertedValue = value;
+	ucAd8232AnalogConvertedValue = (unsigned char) ((float) fCons * value);
 }
-unsigned char ucGetAd8232AnalogValue(){
+unsigned char ucGetAd8232AnalogValue() {
 	return ucAd8232AnalogConvertedValue;
 }
-unsigned int uiGetAd8232AnalogValue(){
+unsigned int uiGetAd8232AnalogValue() {
 	return uiAd8232AnalogConvertedValue;
+}
+unsigned short usGetAd8232AnalogValue() {
+	return usAd8232AnalogConvertedValue;
 }
 /* USER CODE END 0 */
 
@@ -180,7 +192,7 @@ unsigned int uiGetAd8232AnalogValue(){
  * @brief  The application entry point.
  * @retval int
  */
-int main(void) {
+ int main(void) {
 	/* USER CODE BEGIN 1 */
 
 	/* USER CODE END 1 */

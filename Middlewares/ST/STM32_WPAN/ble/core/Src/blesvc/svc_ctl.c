@@ -150,11 +150,11 @@ void SVCCTL_Init( void )
 
   TPS_Init();
 
-  P2PS_STM_Init();
+  //P2PS_STM_Init();
 
   OTAS_STM_Init();
 
-  SVCCTL_InitCustomSvc();
+  //SVCCTL_InitCustomSvc();
   
   MESH_Init();
 

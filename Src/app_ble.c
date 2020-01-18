@@ -473,8 +473,9 @@ void APP_BLE_Init( void )
   /**
    * Initialize Custom Server Application
    */
-  TEMPLATE_APP_Init();
+  //TEMPLATE_APP_Init();
   
+
   SMART_WATCH_APP_Init();//TODO *
   /**
    * Create timer to handle the Advertising Stop

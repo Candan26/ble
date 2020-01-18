@@ -59,7 +59,7 @@ do {\
 #define COPY_SMART_WATCH_WRITE_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x00,0x00,0xAA,0xCC,0x8e,0x22,0x45,0x41,0x9d,0x4c,0x21,0xed,0xae,0x82,0xed,0x19)
 #define COPY_SMART_WATCH_NOTIFY_UUID(uuid_struct)        COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x90,0xA4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 #define COPY_SMART_WATCH_MOTION_CHAR_UUID(uuid_struct)   COPY_UUID_128(uuid_struct,0x74,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
-#define COPY_SMART_WATCH_FLASH_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x84,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0xA4,0xB4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x84,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0xA4,0xB4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 
 /**
  * @brief  Event handler
@@ -174,7 +174,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 
 	/**
 	 *  Add Write Characteristic
- */
+
 	COPY_SMART_WATCH_WRITE_CHAR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
@@ -185,19 +185,19 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	1,
 	&(aSmartWatchContext.SmartWatchWriteClientToServerCharHdle));
 
-
+	 */
 	/**
 	 *   Add Notify Characteristic
 	 */
-	COPY_SMART_WATCH_NOTIFY_UUID(uuid16.Char_UUID_128);
-	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
-	UUID_TYPE_128, &uuid16, 4,
-	CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
-	ATTR_PERMISSION_NONE,
-	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
-	10, /* encryKeySize */
-	1, /* isVariable: 1 */
-	&(aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle));
+	//COPY_SMART_WATCH_NOTIFY_UUID(uuid16.Char_UUID_128);
+	//aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
+	//UUID_TYPE_128, &uuid16, 4,
+	//CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
+	//ATTR_PERMISSION_NONE,
+	//GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
+	//10, /* encryKeySize */
+	//1, /* isVariable: 1 */
+	//&(aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle));
 	/**
 	 * ADd Motion Char
 	 */
@@ -212,7 +212,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	&(aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle));
 
 
-	COPY_SMART_WATCH_FLASH_CHAR_UUID(uuid16.Char_UUID_128);
+	COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
 	CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,

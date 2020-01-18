@@ -75,7 +75,7 @@ volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 
 static unsigned int uiAD8232Values = 0;
 unsigned int ADC_TIMEOUT = 300;
-unsigned char isResponseFinished = 1;
+unsigned char ucIsResponseFinished = 1;
 unsigned int uiAd8232MaxValue = 4000;
 
 #define fCons  0xff/uiAd8232MaxValue
@@ -114,13 +114,12 @@ void prsCheckAI() {
 
 	/* Init variable containing ADC conversion data */
 	uhADCxConvertedData = VAR_CONVERTED_DATA_INIT_VALUE;
-	if (!isResponseFinished)
+	if (!ucIsResponseFinished)
 		return;
-	isResponseFinished = 0;
+	ucIsResponseFinished = 0;
 	HAL_ADC_Start_IT(&hadc1);
 	if (HAL_ADC_Start_IT(&AdcHandle) != HAL_OK) {
 	}
-
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
@@ -133,7 +132,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	/* Update status variable of ADC unitary conversion                     */
 	HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 	ubAdcGrpRegularUnitaryConvStatus = 1;
-	isResponseFinished = 1;
+	ucIsResponseFinished = 1;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -141,10 +140,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		uiAD8232Values++;
 		if (uiAD8232Values >= 10) {
 			uiAD8232Values = 0;
-			//HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 			prsCheckAI();
 		}
-
 	}
 }
 
@@ -156,11 +153,12 @@ void initTimer() {
 	htim16.Init.Period = 63999;
 	HAL_TIM_Base_Init(&htim16);
 }
-void initAdc() {
 
+void initAdc() {
 	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
 	}
 }
+
 void initInterrupts() {
 	HAL_TIM_Base_Start_IT(&htim16);
 	HAL_ADC_Start_IT(&hadc1);
@@ -172,17 +170,19 @@ void systemInit(void) {
 }
 
 void vSetAd8232AnalogValue(unsigned int value) {
-
 	uiAd8232AnalogConvertedValue = value;
 	usAd8232AnalogConvertedValue = value;
 	ucAd8232AnalogConvertedValue = (unsigned char) ((float) fCons * value);
 }
+
 unsigned char ucGetAd8232AnalogValue() {
 	return ucAd8232AnalogConvertedValue;
 }
+
 unsigned int uiGetAd8232AnalogValue() {
 	return uiAd8232AnalogConvertedValue;
 }
+
 unsigned short usGetAd8232AnalogValue() {
 	return usAd8232AnalogConvertedValue;
 }

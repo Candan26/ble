@@ -109,7 +109,7 @@ void vSetAd8232AnalogValue(unsigned int value);
 unsigned char ucGetAd8232AnalogValue();
 unsigned int uiGetAd8232AnalogValue();
 unsigned short usGetAd8232AnalogValue();
-
+extern I2C_HandleTypeDef hi2c3;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

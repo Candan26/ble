@@ -232,7 +232,6 @@ unsigned short usGetAd8232AnalogValue() {
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		/* USER CODE END WHILE */
-
 		/* USER CODE BEGIN 3 */
 		SCH_Run(~0);
 	}

@@ -6,7 +6,9 @@
 typedef struct {
 	uint16_t SmartWatchSvcHdle; /**< Service handle */
 	uint16_t SmartWatchWriteClientToServerCharHdle; /**< Characteristic handle */
-	uint16_t SmartWatchNotifyServerToClientCharHdle; /**< Characteristic handle */
+	uint16_t SmartWatchNotifyEGRCharHdle; /**< EGR Characteristic handle handle */
+	uint16_t SmartWatchNotifyTemperatureCharHdle;/**< Temperature Characteristic handle handle */
+	uint16_t SmartWatchNotifyHumidityCharHdle;/**< Humidity Characteristic handle handle */
 	uint16_t RebootReqCharHdle; /**< Characteristic handle */
 } SmartWatchContext_t;
 
@@ -57,8 +59,8 @@ do {\
  */
 #define COPY_SMART_WATCH_SERVICE_UUID(uuid_struct)       COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x8a,0x34,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 #define COPY_SMART_WATCH_WRITE_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x00,0x00,0xAA,0xCC,0x8e,0x22,0x45,0x41,0x9d,0x4c,0x21,0xed,0xae,0x82,0xed,0x19)
-#define COPY_SMART_WATCH_NOTIFY_UUID(uuid_struct)        COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x90,0xA4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
-#define COPY_SMART_WATCH_MOTION_CHAR_UUID(uuid_struct)   COPY_UUID_128(uuid_struct,0x74,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_TEMPERATURE_UUID(uuid_struct)        COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x90,0xA4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_HUMIDITY_UUID(uuid_struct)   COPY_UUID_128(uuid_struct,0x74,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 #define COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x84,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0xA4,0xB4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 
 /**
@@ -81,9 +83,11 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 		blue_evt = (evt_blue_aci*) event_pckt->data;
 		switch (blue_evt->ecode) {
 		case EVT_BLUE_GATT_ATTRIBUTE_MODIFIED: {
+
 			attribute_modified = (aci_gatt_attribute_modified_event_rp0*) blue_evt->data;
 
-			if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle + 2)) {
+			if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle + 2)) {
+				APP_DBG_MSG("-- GATT : EGR char received\n");
 				/**
 				 * Descriptor handle
 				 */
@@ -100,11 +104,29 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 					SMART_WATCH_STM_App_Notification(&Notification);
 				}
 			}
+			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyTemperatureCharHdle + 2)){
+				APP_DBG_MSG("-- GATT : Temperature char received\n");
+				/**
+				 * Descriptor handle
+				 */
+				return_value = SVCCTL_EvtAckFlowEnable;
+				/**
+				 * Notify to application
+				 */
+				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
 
+					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
+					SMART_WATCH_STM_App_Notification_TEMPERATURE(&Notification);
+				} else {
+					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
+					SMART_WATCH_STM_App_Notification_TEMPERATURE(&Notification);
+				}
+			}
 			else if (attribute_modified->Attr_Handle
-					== (aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle
+					== (aSmartWatchContext.SmartWatchNotifyEGRCharHdle
 							+ 1)) {
-				BLE_DBG_TEMPLATE_STM_MSG("-- GATT : WRITE CHAR INFO RECEIVED\n");
+
+				APP_DBG_MSG("-- GATT : WRITE CHAR INFO RECEIVED\n");
 				Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_WRITE_EVT;
 				Notification.DataTransfered.Length =
 						attribute_modified->Attr_Data_Length;
@@ -115,7 +137,7 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 
 			else if (attribute_modified->Attr_Handle
 					== (aSmartWatchContext.RebootReqCharHdle + 1)) {
-				BLE_DBG_TEMPLATE_STM_MSG("-- GATT : REBOOT REQUEST RECEIVED\n");
+				APP_DBG_MSG("-- GATT : REBOOT REQUEST RECEIVED\n");
 				Notification.SMART_WATCH_Evt_Opcode =
 						SMART_WATCH_STM_BOOT_REQUEST_EVT;
 				Notification.DataTransfered.Length =
@@ -189,19 +211,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	/**
 	 *   Add Notify Characteristic
 	 */
-	//COPY_SMART_WATCH_NOTIFY_UUID(uuid16.Char_UUID_128);
-	//aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
-	//UUID_TYPE_128, &uuid16, 4,
-	//CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
-	//ATTR_PERMISSION_NONE,
-	//GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
-	//10, /* encryKeySize */
-	//1, /* isVariable: 1 */
-	//&(aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle));
-	/**
-	 * ADd Motion Char
-	 */
-	COPY_SMART_WATCH_MOTION_CHAR_UUID(uuid16.Char_UUID_128);
+	COPY_SMART_WATCH_TEMPERATURE_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
 	CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
@@ -209,7 +219,19 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
 	10, /* encryKeySize */
 	1, /* isVariable: 1 */
-	&(aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle));
+	&(aSmartWatchContext.SmartWatchNotifyTemperatureCharHdle));
+	/**
+	 * ADd Motion Char
+	 */
+	COPY_SMART_WATCH_HUMIDITY_UUID(uuid16.Char_UUID_128);
+	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
+	UUID_TYPE_128, &uuid16, 4,
+	CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
+	ATTR_PERMISSION_NONE,
+	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
+	10, /* encryKeySize */
+	1, /* isVariable: 1 */
+	&(aSmartWatchContext.SmartWatchNotifyHumidityCharHdle));
 
 
 	COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid16.Char_UUID_128);
@@ -220,7 +242,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
 	10, /* encryKeySize */
 	1, /* isVariable: 1 */
-	&(aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle));
+	&(aSmartWatchContext.SmartWatchNotifyEGRCharHdle));
 	return;
 }
 
@@ -237,18 +259,26 @@ tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 	case 0x0000:
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,
-				aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle, 0, /* charValOffset */
+				aSmartWatchContext.SmartWatchNotifyEGRCharHdle, 0, /* charValOffset */
 				4, /* charValueLen */
 				(uint8_t *) pPayload);
 
 		break;
-	case 0x0001:
 
+	case 0x0001:
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,
-				aSmartWatchContext.SmartWatchNotifyServerToClientCharHdle, 0, /* charValOffset */
+				aSmartWatchContext.SmartWatchNotifyTemperatureCharHdle, 0, /* charValOffset */
 				4, /* charValueLen */
 				(uint8_t *) pPayload);
+		break;
+	case 0x0002:
+		result = aci_gatt_update_char_value(
+				aSmartWatchContext.SmartWatchSvcHdle,
+				aSmartWatchContext.SmartWatchNotifyHumidityCharHdle, 0, /* charValOffset */
+				4, /* charValueLen */
+				(uint8_t *) pPayload);
+		break;
 	default:
 		break;
 	}

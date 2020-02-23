@@ -32,6 +32,7 @@ typedef struct {
 /* Exported functions ------------------------------------------------------- */
 void SMART_WATCH_STM_Init(void);
 void SMART_WATCH_STM_App_Notification(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
+void SMART_WATCH_STM_App_Notification_TEMPERATURE(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload);
 #ifdef __cplusplus
 }

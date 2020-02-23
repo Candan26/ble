@@ -3,7 +3,11 @@
 #include "main.h"
 
 
-#define ADDRESS_OF_SI7021 0x40
+#define ADDRESS_OF_SI7021 0x80
+#define SEQ_NO_SEND 0
+#define SEQ_NO_RECIEVE 1
+
+
 #define SI7021_MEASRH_HOLD_CMD           0xE5 /**< Measure Relative Humidity, Hold Master Mode */
 #define SI7021_MEASRH_NOHOLD_CMD         0xF5 /**< Measure Relative Humidity, No Hold Master Mode */
 #define SI7021_MEASTEMP_HOLD_CMD         0xE3 /**< Measure Temperature, Hold Master Mode */
@@ -40,13 +44,16 @@ typedef struct {
 	uint8_t ucChecksumTemp;
 	uint8_t ucRegisterVal;
 
+	uint8_t ucSeqNumber;
+	uint8_t ucTempOrHumidty;
+
 }typedef_si7021;
 //global functions
 unsigned char vInitsi7021();
 
-void vSi7021ProcessHumidity();
-void vSi7021ProcessTemperature();
+void vSi7021ProcessHumidityAndTemperature();
 
-extern typedef_si7021 msi7021;
+
+extern typedef_si7021 mSi7021Sensor;
 #endif
 

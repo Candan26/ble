@@ -29,7 +29,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+#include "si7021.h"
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -137,10 +137,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM16) {
-		uiAD8232Values++;
+		uiAD8232Values++; // counter for AD8232
 		if (uiAD8232Values >= 10) {
 			uiAD8232Values = 0;
 			prsCheckAI();
+			vSi7021ProcessHumidityAndTemperature(); //TODO seperate this two line to a method
 		}
 	}
 }
@@ -163,10 +164,12 @@ void initInterrupts() {
 	HAL_TIM_Base_Start_IT(&htim16);
 	HAL_ADC_Start_IT(&hadc1);
 }
+
 void systemInit(void) {
 	initTimer();
 	//initAdc();
 	initInterrupts();
+	vInitsi7021();
 }
 
 void vSetAd8232AnalogValue(unsigned int value) {

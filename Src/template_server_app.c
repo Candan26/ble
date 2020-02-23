@@ -42,7 +42,7 @@ typedef struct {
 /* Private macros ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 #define TEMPERATURE_CHANGE_STEP            10
-#define TEMPERATURE_CHANGE_PERIOD        (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
+#define EGR_CHANGE_PERIOD        (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define TEMPERATURE_VALUE_MAX_THRESHOLD   350
 #define TEMPERATURE_VALUE_MIN_THRESHOLD   100
 
@@ -63,7 +63,7 @@ static void TEMPLATE_Send_Notification_Task(void);
 static void TEMPLATE_TemperatureChange_Timer_Callback(void);
 static void TEMPLATE_TemperatureChange_Timer_Callback(void)
 {
-  SCH_SetTask(1<<CFG_MY_TASK_NOTIFY_TEMPERATURE, CFG_SCH_PRIO_0);
+  SCH_SetTask(1<<CFG_MY_TASK_NOTIFY_EGR, CFG_SCH_PRIO_0);
 }
 
 /* Public functions ----------------------------------------------------------*/
@@ -76,7 +76,7 @@ void TEMPLATE_STM_App_Notification(	TEMPLATE_STM_App_Notification_evt_t *pNotifi
 		APP_DBG_MSG(" \n\r");
 #endif
 		/* Start the timer used to update the characteristic */
-		HW_TS_Start(TEMPLATE_Server_App_Context.Update_timer_Id, TEMPERATURE_CHANGE_PERIOD);
+		HW_TS_Start(TEMPLATE_Server_App_Context.Update_timer_Id, EGR_CHANGE_PERIOD);
 		break; /* TEMPLATE_STM_NOTIFY_ENABLED_EVT */
 
 	case TEMPLATE_STM_NOTIFY_DISABLED_EVT:
@@ -127,7 +127,7 @@ void TEMPLATE_STM_App_Notification(	TEMPLATE_STM_App_Notification_evt_t *pNotifi
 
 void TEMPLATE_APP_Init(void) {
 	/* Register task used to update the characteristic (send the notification) */
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE, TEMPLATE_Send_Notification_Task);
+	SCH_RegTask(CFG_MY_TASK_NOTIFY_EGR, TEMPLATE_Send_Notification_Task);
 	/* Create timer to change the Temperature and update charecteristic */
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(TEMPLATE_Server_App_Context.Update_timer_Id),

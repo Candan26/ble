@@ -138,7 +138,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM16) {
 		uiAD8232Values++; // counter for AD8232
-		if (uiAD8232Values >= 10) {
+		if (uiAD8232Values >= 15) {
 			uiAD8232Values = 0;
 			prsCheckAI();
 			vSi7021ProcessHumidityAndTemperature(); //TODO seperate this two line to a method

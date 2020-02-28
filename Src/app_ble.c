@@ -41,7 +41,7 @@
 #include "hal_lcd.h"
 #include "smart_watch_app.h"
 /* USER CODE END Includes */
-
+static int siCounterTogleLed=0;
 /* Private typedef -----------------------------------------------------------*/
 
 /**
@@ -638,10 +638,15 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
         break; /* EVT_BLUE_GAP_PROCEDURE_COMPLETE */
 #if(RADIO_ACTIVITY_EVENT != 0)
         case 0x0004:
+
+        siCounterTogleLed++;
         /* USER CODE BEGIN RADIO_ACTIVITY_EVENT*/
-        HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
-        HAL_Delay(5);
-        HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+        if(siCounterTogleLed==100){
+        	siCounterTogleLed=0;
+            HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+        }
+
+
         /* USER CODE END RADIO_ACTIVITY_EVENT*/
         break; /* RADIO_ACTIVITY_EVENT */
 #endif

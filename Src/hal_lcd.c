@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-static char tempLcdBuffer[32];
+#define LCD_BUFFER_LENGHT 64
+static char tempLcdBuffer[LCD_BUFFER_LENGHT];
 
 //TODO CANDAN EDITION
 unsigned short usBpmPoslastX;
@@ -13,6 +14,7 @@ unsigned short usBpmPosX;
 unsigned short usBpmPosY;
 int postorier=10;
 int percentageOfReduction=5;
+void floatToUcharArray(float dest, char *pArray);
 
 void LCD_BLE_CS_PrintBPM(int analogValue){
 	if(usBpmPosX> 127 || usBpmPosX==0 ){
@@ -197,14 +199,41 @@ void LCD_BLE_HRS_PrintBPM(uint8_t BPM)
   SSD1306_UpdateScreen();
 }
 
-void LCD_BLE_HTS_PrintTemperature(uint8_t temperature)
+void floatToUcharArray(float dest, char *pArray){
+	char tempBufer[10];
+	int iPart;
+	int fPart;
+
+	iPart= dest;
+	fPart= (dest*100)-(iPart*100);
+	sprintf(tempBufer,"%d",iPart);
+	strcat(pArray,tempBufer);
+	strcat(pArray,(char *)".");
+	sprintf(pArray,"%d",fPart);
+	strcat(pArray,tempBufer);
+}
+
+void LCD_BLE_HTS_PrintTemperature(float temperature)
 {
-  //sprintf(tempLcdBuffer, "#%02d", errId);
-  SSD1306_DrawFilledRectangle(0,0,128,32,SSD1306_COLOR_WHITE);
+
+  memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
+  sprintf(tempLcdBuffer,(char *)"Temp: ");
+  floatToUcharArray(temperature,&tempLcdBuffer[6]);
+  SSD1306_Fill(SSD1306_COLOR_BLACK);
   SSD1306_GotoXY(7,8);
-  SSD1306_Puts("ERROR", &Font_11x18, SSD1306_COLOR_BLACK); 
-  SSD1306_GotoXY(66,9);
-  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+  SSD1306_UpdateScreen();
+}
+
+void LCD_BLE_HTS_PrintHumidity(float humidity)
+{
+  memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
+  sprintf(&tempLcdBuffer[0],(char *)"Humidity: ");
+  floatToUcharArray(humidity,&tempLcdBuffer[10]);
+  SSD1306_Fill(SSD1306_COLOR_BLACK);
+  SSD1306_GotoXY(7,8);
+  strcat(tempLcdBuffer,"%");
+  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
   SSD1306_UpdateScreen();
 }
 

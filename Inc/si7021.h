@@ -32,8 +32,8 @@ const static int TRANSACTION_TIMEOUT=100;
 
 typedef struct {
 	//definitions
-	float fHumidty;
-	float fTemperature;
+	volatile float fHumidty;
+	volatile float fTemperature;
 
 	uint32_t uiSernum_a;
 	uint32_t uiSernum_b;

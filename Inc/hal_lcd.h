@@ -25,7 +25,8 @@ void LCD_BLE_PrintLocalName(const char * name);
 void LCD_BLE_PrintStatus(char * status);
 void LCD_BLE_PrintLogo(void);
 void LCD_BLE_HRS_PrintBPM(uint8_t BPM);
-void LCD_BLE_HTS_PrintTemperature(uint8_t temperature);
+void LCD_BLE_HTS_PrintTemperature(float temperature);
+void LCD_BLE_HTS_PrintHumidity(float humidity);
 void LCD_BLE_TPS_PrintRSSI(uint8_t RSSI);
 
 //TODO candan edition LCD

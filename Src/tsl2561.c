@@ -120,13 +120,13 @@ tsl2561Error_t tTsl2561GetLuminosity(uint16_t *broadband, uint16_t *ir) {
 	// Wait x ms for ADC to complete
 	switch (_tsl2561IntegrationTime) {
 	case TSL2561_INTEGRATIONTIME_13MS:
-		HAL_Delay(14);
+		//HAL_Delay(14); TODO
 		break;
 	case TSL2561_INTEGRATIONTIME_101MS:
-		HAL_Delay(102);
+		//HAL_Delay(102);
 		break;
 	default:
-		HAL_Delay(400);
+		//HAL_Delay(400);
 		break;
 	}
 

@@ -83,11 +83,9 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 		blue_evt = (evt_blue_aci*) event_pckt->data;
 		switch (blue_evt->ecode) {
 		case EVT_BLUE_GATT_ATTRIBUTE_MODIFIED: {
-
 			attribute_modified = (aci_gatt_attribute_modified_event_rp0*) blue_evt->data;
-
 			if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle + 2)) {
-				APP_DBG_MSG("-- GATT : EGR char received\n");
+
 				/**
 				 * Descriptor handle
 				 */
@@ -96,36 +94,40 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 				 * Notify to application
 				 */
 				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
-
+					APP_DBG_MSG("-- GATT : EGR char notification enabled\n");
 					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
 					SMART_WATCH_STM_App_Notification(&Notification);
 				} else {
+					APP_DBG_MSG("-- GATT : EGR char notification disabled\n");
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
 					SMART_WATCH_STM_App_Notification(&Notification);
 				}
 			}
 			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyTemperatureCharHdle + 2)){
-				APP_DBG_MSG("-- GATT : Temperature char received\n");
-				/**
-				 * Descriptor handle
-				 */
 				return_value = SVCCTL_EvtAckFlowEnable;
-				/**
-				 * Notify to application
-				 */
 				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
-
+					APP_DBG_MSG("-- GATT : Temperature char notification enabled\n");
 					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
 					SMART_WATCH_STM_App_Notification_TEMPERATURE(&Notification);
 				} else {
+					APP_DBG_MSG("-- GATT : Temperature char notification disabled\n");
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
 					SMART_WATCH_STM_App_Notification_TEMPERATURE(&Notification);
 				}
 			}
-			else if (attribute_modified->Attr_Handle
-					== (aSmartWatchContext.SmartWatchNotifyEGRCharHdle
-							+ 1)) {
-
+			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyHumidityCharHdle + 2)){
+				return_value = SVCCTL_EvtAckFlowEnable;
+				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
+					APP_DBG_MSG("-- GATT : Humidity  char notification enabled\n");
+					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
+					SMART_WATCH_STM_App_Notification_HUMIDITY(&Notification);
+				} else {
+					APP_DBG_MSG("-- GATT : Humidity  char notification disabled\n");
+					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
+					SMART_WATCH_STM_App_Notification_HUMIDITY(&Notification);
+				}
+			}
+			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle+ 1)) {
 				APP_DBG_MSG("-- GATT : WRITE CHAR INFO RECEIVED\n");
 				Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_WRITE_EVT;
 				Notification.DataTransfered.Length =
@@ -134,7 +136,6 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 						attribute_modified->Attr_Data;
 				SMART_WATCH_STM_App_Notification(&Notification);
 			}
-
 			else if (attribute_modified->Attr_Handle
 					== (aSmartWatchContext.RebootReqCharHdle + 1)) {
 				APP_DBG_MSG("-- GATT : REBOOT REQUEST RECEIVED\n");
@@ -148,7 +149,6 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 			}
 		}
 			break;
-
 		default:
 			break;
 		}
@@ -200,7 +200,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	COPY_SMART_WATCH_WRITE_CHAR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
-	CHAR_PROP_WRITE_WITHOUT_RESP | CHAR_PROP_READ | CHAR_PROP_NOTIFY,
+	CHAR_PROP_WRITE_WITHOUT_ RESP | CHAR_PROP_READ | CHAR_PROP_NOTIFY,
 	ATTR_PERMISSION_NONE,
 	GATT_NOTIFY_ATTRIBUTE_WRITE,
 	10,

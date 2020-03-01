@@ -211,6 +211,7 @@ void floatToUcharArray(float dest, char *pArray){
 	sprintf(tempBufer,"%d", fPart);
 	strcat(pArray,tempBufer);
 }
+
 void  LCD_BLE_HTS_LUX(uint32_t lux){
 	  char tempBufer[10];
 
@@ -218,6 +219,21 @@ void  LCD_BLE_HTS_LUX(uint32_t lux){
 	  sprintf(tempLcdBuffer,(char *)"Lux: ");
 	  sprintf(tempBufer,"%d",lux);
 	  strcat(tempLcdBuffer,tempBufer);
+	  SSD1306_Fill(SSD1306_COLOR_BLACK);
+	  SSD1306_GotoXY(7,8);
+	  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+	  SSD1306_UpdateScreen();
+}
+
+void LCD_BLE_HTS_GSR(float gsr){
+	 char tempBufer[10];
+	 int iGsr=gsr;
+
+	  memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
+	  sprintf(tempLcdBuffer,(char *)"GSR: ");
+	  sprintf(tempBufer,"%d",iGsr);
+	  strcat(tempLcdBuffer,tempBufer);
+
 	  SSD1306_Fill(SSD1306_COLOR_BLACK);
 	  SSD1306_GotoXY(7,8);
 	  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);

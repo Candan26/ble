@@ -54,7 +54,7 @@ uint8_t SSD1306_Init(void) {
   //ssd1306_I2C_Init();
 
   /* Power-Up the display */
-  HAL_GPIO_WritePin(DISP_VSS_GPIO_Port, DISP_VSS_Pin, GPIO_PIN_RESET);
+  //HAL_GPIO_WritePin(DISP_VSS_GPIO_Port, DISP_VSS_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(DISP_VDD_GPIO_Port, DISP_VDD_Pin, GPIO_PIN_SET);
 
   /* A little delay for the SSD1306 power-up */

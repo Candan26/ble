@@ -2,6 +2,7 @@
 #include "common_blesvc.h"
 #include "hal_lcd.h"
 #include "smart_watch_stm.h"
+#include "main.h"
 /* Private typedef -----------------------------------------------------------*/
 typedef struct {
 	uint16_t SmartWatchSvcHdle; /**< Service handle */
@@ -10,6 +11,7 @@ typedef struct {
 	uint16_t SmartWatchNotifyTemperatureCharHdle;/**< Temperature Characteristic handle handle */
 	uint16_t SmartWatchNotifyHumidityCharHdle;/**< Humidity Characteristic handle handle */
 	uint16_t SmartWatchNotifyLUXCharHdle;/**< LUX Characteristic handle handle */
+	uint16_t SmartWatchNotifyGSRCharHdle;/**< GSR Characteristic handle handle */
 	uint16_t RebootReqCharHdle; /**< Characteristic handle */
 } SmartWatchContext_t;
 
@@ -64,6 +66,7 @@ do {\
 #define COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x84,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0xA4,0xB4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 #define COPY_SMART_WATCH_HUMIDITY_UUID(uuid_struct)      	 COPY_UUID_128(uuid_struct,0x74,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 #define COPY_SMART_WATCH_LUX_UUID(uuid_struct)      	 	 COPY_UUID_128(uuid_struct,0x64,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_GSR_UUID(uuid_struct)      	 	 COPY_UUID_128(uuid_struct,0x60,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 
 /**
  * @brief  Event handler
@@ -96,6 +99,7 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 				 */
 				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
 					APP_DBG_MSG("-- GATT : EGR char notification enabled\n");
+					vSetAdcChannel(ADC_CHANNEL_3);
 					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
 					SMART_WATCH_STM_App_Notification(&Notification);
 				} else {
@@ -142,6 +146,20 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 					LCD_Print("SELECT", "CHARACTER");
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
 					SMART_WATCH_STM_App_Notification_LUX(&Notification);
+				}
+			}
+			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyGSRCharHdle + 2)){
+				return_value = SVCCTL_EvtAckFlowEnable;
+				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
+					APP_DBG_MSG("-- GSR : GSR  char notification enabled\n");
+					vSetAdcChannel(ADC_CHANNEL_4);
+					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
+					SMART_WATCH_STM_App_Notification_GSR(&Notification);
+				} else {
+					APP_DBG_MSG("-- GATT : GSR  char notification disabled\n");
+					LCD_Print("SELECT", "CHARACTER");
+					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
+					SMART_WATCH_STM_App_Notification_GSR(&Notification);
 				}
 			}
 			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle+ 1)) {
@@ -208,7 +226,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 
 	COPY_SMART_WATCH_SERVICE_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_service(UUID_TYPE_128, (Service_UUID_t *) &uuid16,
-	PRIMARY_SERVICE, 20, /*Max_Attribute_Records*/
+	PRIMARY_SERVICE, 24, /*Max_Attribute_Records*/
 	&(aSmartWatchContext.SmartWatchSvcHdle));
 
 	/**
@@ -271,6 +289,16 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	&(aSmartWatchContext.SmartWatchNotifyLUXCharHdle));
 
 
+	COPY_SMART_WATCH_GSR_UUID(uuid16.Char_UUID_128);
+	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
+	UUID_TYPE_128, &uuid16, 4,
+	CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
+	ATTR_PERMISSION_NONE,
+	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
+	10, /* encryKeySize */
+	1, /* isVariable: 1 */
+	&(aSmartWatchContext.SmartWatchNotifyGSRCharHdle));
+
 	return;
 }
 
@@ -312,6 +340,14 @@ tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,
 				aSmartWatchContext.SmartWatchNotifyLUXCharHdle, 0, /* charValOffset */
+				4, /* charValueLen */
+				(uint8_t *) pPayload);
+		break;
+
+	case 0x0004:
+		result = aci_gatt_update_char_value(
+				aSmartWatchContext.SmartWatchSvcHdle,
+				aSmartWatchContext.SmartWatchNotifyGSRCharHdle, 0, /* charValOffset */
 				4, /* charValueLen */
 				(uint8_t *) pPayload);
 		break;

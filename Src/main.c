@@ -31,6 +31,7 @@
 /* USER CODE BEGIN PTD */
 #include "si7021.h"
 #include "tsl2561.h"
+//TODO Pars analog datas
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -70,6 +71,7 @@ static void MX_RF_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
+volatile uint32_t uiGSRRawData=0;
 volatile static unsigned int uiAd8232AnalogConvertedValue = 0;
 volatile static unsigned char ucAd8232AnalogConvertedValue = 0;
 volatile static unsigned short usAd8232AnalogConvertedValue = 0;
@@ -124,12 +126,14 @@ void prsCheckAI() {
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+
 	uhADCxConvertedData = HAL_ADC_GetValue(hadc);
 	/* Computation of ADC conversions raw data to physical values           */
 	/* using helper macro.                                                  */
 	uhADCxConvertedData_Voltage_mVolt = __ADC_CALC_DATA_VOLTAGE(VDDA_APPLI,
 			uhADCxConvertedData);
 	vSetAd8232AnalogValue(uhADCxConvertedData_Voltage_mVolt);
+	vSetGSRAnalogValue(uhADCxConvertedData_Voltage_mVolt);
 	/* Update status variable of ADC unitary conversion                     */
 	HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 	ubAdcGrpRegularUnitaryConvStatus = 1;
@@ -181,6 +185,14 @@ void vSetAd8232AnalogValue(unsigned int value) {
 	ucAd8232AnalogConvertedValue = (unsigned char) ((float) fCons * value);
 }
 
+void vSetGSRAnalogValue(uint32_t value){
+	uiGSRRawData=value;
+}
+
+float fGetGSRHumanResistance(){
+	return uiGSRRawData;//((1024+2*uiGSRRawData)*10000)/(512-uiGSRRawData);
+}
+
 unsigned char ucGetAd8232AnalogValue() {
 	return ucAd8232AnalogConvertedValue;
 }
@@ -192,6 +204,21 @@ unsigned int uiGetAd8232AnalogValue() {
 unsigned short usGetAd8232AnalogValue() {
 	return usAd8232AnalogConvertedValue;
 }
+
+void vSetAdcChannel(uint32_t adcChannel){
+	ADC_ChannelConfTypeDef sConfig = { 0 };
+
+	sConfig.Channel = adcChannel;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	sConfig.Offset = 0;
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+		Error_Handler();
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -578,7 +605,7 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(DISP_VSS_GPIO_Port, DISP_VSS_Pin, GPIO_PIN_RESET);
+//	HAL_GPIO_WritePin(DISP_VSS_GPIO_Port, DISP_VSS_Pin, GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(DISP_VDD_GPIO_Port, DISP_VDD_Pin, GPIO_PIN_SET);
@@ -586,13 +613,13 @@ static void MX_GPIO_Init(void) {
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOB, LED_GREEN_Pin | LED_BLUE_Pin, GPIO_PIN_RESET);
 
-	/*Configure GPIO pin : DISP_VSS_Pin */
+	/*Configure GPIO pin : DISP_VSS_Pin
 	GPIO_InitStruct.Pin = DISP_VSS_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	HAL_GPIO_Init(DISP_VSS_GPIO_Port, &GPIO_InitStruct);
-
+ */
 	/*Configure GPIO pin : DISP_VDD_Pin */
 	GPIO_InitStruct.Pin = DISP_VDD_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;

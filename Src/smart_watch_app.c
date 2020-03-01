@@ -11,6 +11,7 @@
 #include "si7021.h"
 #include "tsl2561.h"
 
+
 /* Private typedef -----------------------------------------------------------*/
 typedef union {
 	uint8_t uc[4];
@@ -75,13 +76,14 @@ typedef struct {
 	uint8_t ucUpdate_Temparature_Id;
 	uint8_t ucUpdate_Humidity_Id;
 	uint8_t ucUpdate_LUX_Id;
+	uint8_t ucUpdate_GSR_Id;
 } SMART_WATCH_App_Context_t;
 
 #define EGR_CHANGE_PERIOD        (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define TEMPERATURE_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define HUMIDITY_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define LUX_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
-
+#define GSR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 /**
  * START of Section BLE_APP_CONTEXT
  */
@@ -100,6 +102,7 @@ static void SMART_WATCH_EGR_Timer_Callback(void);
 static void SMART_WATCH_Temperature_Timer_Callback(void);
 static void SMART_WATCH_Humidity_Timer_Callback(void);
 static void SMART_WATCH_LUX_Timer_Callback(void);
+static void SMART_WATCH_GSR_Timer_Callback(void);
 /* Public functions ----------------------------------------------------------*/
 void SMART_WATCH_STM_App_Notification(SMART_WATCH_STM_App_Notification_evt_t *pNotification) {
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
@@ -177,6 +180,23 @@ void SMART_WATCH_STM_App_Notification_LUX(SMART_WATCH_STM_App_Notification_evt_t
 	return;
 }
 
+void SMART_WATCH_STM_App_Notification_GSR(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
+	switch (pNotification->SMART_WATCH_Evt_Opcode) {
+	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
+		SMART_WATCH_App_Context.ucNotificationStatus = 1;
+		/* Start the timer used to update the characteristic */
+		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_GSR_Id, GSR_CHANGE_PERIOD);//LUX_CHANGE_PERIOD
+		break; /* NOTIFY_ENABLED_EVT */
+	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
+ 		SMART_WATCH_App_Context.ucNotificationStatus = 0;
+		/* Start the timer used to update the characteristic */
+		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_GSR_Id);
+		break; /* NOTIFY_DISABLED_EVT */
+	default:
+		break; /* DEFAULT */
+	}
+	return;
+}
 
 void SMART_WATCH_APP_Init(void) {
 	/* Register task used to update the characteristic (send the notification) */
@@ -184,8 +204,8 @@ void SMART_WATCH_APP_Init(void) {
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE,SMART_WATCH_Send_Notification_Task);
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_HUMIDITY,SMART_WATCH_Send_Notification_Task);
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_LUX,SMART_WATCH_Send_Notification_Task);
+	SCH_RegTask(CFG_MY_TASK_NOTIFY_GSR,SMART_WATCH_Send_Notification_Task);
 	/* Create timer to change the Temperature and update charecteristic */
-
 	//initilizing ble timers
 	APP_DBG_MSG("Initializing BLE timers \n");
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
@@ -204,13 +224,19 @@ void SMART_WATCH_APP_Init(void) {
 	      &(SMART_WATCH_App_Context.ucUpdate_Humidity_Id),
 	      hw_ts_Repeated,
 		  SMART_WATCH_Humidity_Timer_Callback);
+	APP_DBG_MSG("Humidity soft BLE timer created \n");
 
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_LUX_Id),
 	      hw_ts_Repeated,
 		  SMART_WATCH_LUX_Timer_Callback);
+	APP_DBG_MSG("LUX soft BLE timer created \n");
 
-	APP_DBG_MSG("Humidity soft BLE timer created \n");
+	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
+	      &(SMART_WATCH_App_Context.ucUpdate_GSR_Id),
+	      hw_ts_Repeated,
+		  SMART_WATCH_GSR_Timer_Callback);
+	APP_DBG_MSG("LUX soft BLE timer created \n");
 	/**
 	 * Initialize Template application context
 	 */
@@ -283,6 +309,20 @@ static void SMART_WATCH_LUX_Timer_Callback(void) {
 		value[i] = tmpVal.uc[i];
 
 	SMART_WATCH_STM_App_Update_Char(0x0003, (uint8_t *) &value);
+}
+
+static void SMART_WATCH_GSR_Timer_Callback(void){
+	static unsigned char value[4];
+	unionTypeDef tmpVal;
+	int i =0;
+	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_GSR, CFG_SCH_PRIO_0);
+	//TODO add LCD and
+	tmpVal.f=fGetGSRHumanResistance();
+	LCD_BLE_HTS_GSR(tmpVal.f);
+	for(i=0;i<4;i++)
+		value[i] = tmpVal.uc[i];
+
+	SMART_WATCH_STM_App_Update_Char(0x0004, (uint8_t *) &value);
 }
 
 static void SMART_WATCH_context_Init(void) {

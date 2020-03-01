@@ -89,8 +89,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define AI0_Pin GPIO_PIN_2
 #define AI0_GPIO_Port GPIOC
-#define DISP_VSS_Pin GPIO_PIN_3
-#define DISP_VSS_GPIO_Port GPIOC
+#define AI1_Pin GPIO_PIN_3
+#define AI1_GPIO_Port GPIOC
 #define DISP_VDD_Pin GPIO_PIN_0
 #define DISP_VDD_GPIO_Port GPIOA
 #define LOP_Pin GPIO_PIN_2
@@ -106,9 +106,12 @@ void Error_Handler(void);
 #define LED_BLUE_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 void vSetAd8232AnalogValue(unsigned int value);
+void vSetAdcChannel(uint32_t adcChannel);
+void vSetGSRAnalogValue(uint32_t value);
 unsigned char ucGetAd8232AnalogValue();
 unsigned int uiGetAd8232AnalogValue();
 unsigned short usGetAd8232AnalogValue();
+float fGetGSRHumanResistance();
 extern I2C_HandleTypeDef hi2c3;
 /* USER CODE END Private defines */
 

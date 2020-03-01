@@ -9,6 +9,7 @@
 #include "smart_watch_stm.h"
 #include "main.h"
 #include "si7021.h"
+#include "tsl2561.h"
 
 /* Private typedef -----------------------------------------------------------*/
 typedef union {
@@ -73,11 +74,14 @@ typedef struct {
 	uint8_t ucUpdate_EGR_Id;
 	uint8_t ucUpdate_Temparature_Id;
 	uint8_t ucUpdate_Humidity_Id;
+	uint8_t ucUpdate_LUX_Id;
 } SMART_WATCH_App_Context_t;
 
 #define EGR_CHANGE_PERIOD        (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define TEMPERATURE_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define HUMIDITY_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
+#define LUX_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
+
 /**
  * START of Section BLE_APP_CONTEXT
  */
@@ -95,6 +99,7 @@ static void SMART_WATCH_Send_Notification_Task(void);
 static void SMART_WATCH_EGR_Timer_Callback(void);
 static void SMART_WATCH_Temperature_Timer_Callback(void);
 static void SMART_WATCH_Humidity_Timer_Callback(void);
+static void SMART_WATCH_LUX_Timer_Callback(void);
 /* Public functions ----------------------------------------------------------*/
 void SMART_WATCH_STM_App_Notification(SMART_WATCH_STM_App_Notification_evt_t *pNotification) {
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
@@ -102,16 +107,16 @@ void SMART_WATCH_STM_App_Notification(SMART_WATCH_STM_App_Notification_evt_t *pN
 		SMART_WATCH_App_Context.ucNotificationStatus = 1;
 		/* Start the timer used to update the characteristic */
 		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_EGR_Id,EGR_CHANGE_PERIOD );//TEMPERATURE_CHANGE_PERIOD
-		break; /* TEMPLATE_STM_NOTIFY_ENABLED_EVT */
+		break; /* NOTIFY_ENABLED_EVT */
 	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
  		SMART_WATCH_App_Context.ucNotificationStatus = 0;
 		/* Start the timer used to update the characteristic */
 		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_EGR_Id);
-		break; /* TEMPLATE_STM_NOTIFY_DISABLED_EVT */
+		break; /* NOTIFY_DISABLED_EVT */
 	case SMART_WATCH_STM_WRITE_EVT:
 		if (pNotification->DataTransfered.pPayload[0] == 0x00) {
 		}
-		break; /* TEMPLATE_STM_WRITE_EVT */
+		break; /* WRITE_EVT */
 	default:
 		break; /* DEFAULT */
 	}
@@ -124,39 +129,61 @@ void SMART_WATCH_STM_App_Notification_TEMPERATURE(SMART_WATCH_STM_App_Notificati
 		SMART_WATCH_App_Context.ucNotificationStatus = 1;
 		/* Start the timer used to update the characteristic */
 		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_Temparature_Id,TEMPERATURE_CHANGE_PERIOD );//TEMPERATURE_CHANGE_PERIOD
-		break; /* TEMPLATE_STM_NOTIFY_ENABLED_EVT */
+		break; /* NOTIFY_ENABLED_EVT */
 	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
  		SMART_WATCH_App_Context.ucNotificationStatus = 0;
 		/* Start the timer used to update the characteristic */
 		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_Temparature_Id);
-		break; /* TEMPLATE_STM_NOTIFY_DISABLED_EVT */
+		break; /* NOTIFY_DISABLED_EVT */
 	default:
 		break; /* DEFAULT */
 	}
 	return;
 }
+
 void SMART_WATCH_STM_App_Notification_HUMIDITY(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
 	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
 		SMART_WATCH_App_Context.ucNotificationStatus = 1;
 		/* Start the timer used to update the characteristic */
 		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_Humidity_Id,HUMIDITY_CHANGE_PERIOD );//HUMIDITY_CHANGE_PERIOD
-		break; /* TEMPLATE_STM_NOTIFY_ENABLED_EVT */
+		break; /* NOTIFY_ENABLED_EVT */
 	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
  		SMART_WATCH_App_Context.ucNotificationStatus = 0;
 		/* Start the timer used to update the characteristic */
 		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_Humidity_Id);
-		break; /* TEMPLATE_STM_NOTIFY_DISABLED_EVT */
+		break; /* NOTIFY_DISABLED_EVT */
 	default:
 		break; /* DEFAULT */
 	}
 	return;
 }
+
+void SMART_WATCH_STM_App_Notification_LUX(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
+	switch (pNotification->SMART_WATCH_Evt_Opcode) {
+	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
+		SMART_WATCH_App_Context.ucNotificationStatus = 1;
+		/* Start the timer used to update the characteristic */
+		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_LUX_Id,LUX_CHANGE_PERIOD );//LUX_CHANGE_PERIOD
+		break; /* NOTIFY_ENABLED_EVT */
+	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
+ 		SMART_WATCH_App_Context.ucNotificationStatus = 0;
+		/* Start the timer used to update the characteristic */
+		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_LUX_Id);
+		break; /* NOTIFY_DISABLED_EVT */
+	default:
+		break; /* DEFAULT */
+	}
+	return;
+}
+
+
 void SMART_WATCH_APP_Init(void) {
 	/* Register task used to update the characteristic (send the notification) */
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_EGR,SMART_WATCH_Send_Notification_Task);
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE,SMART_WATCH_Send_Notification_Task);
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_HUMIDITY,SMART_WATCH_Send_Notification_Task);
+	SCH_RegTask(CFG_MY_TASK_NOTIFY_LUX,SMART_WATCH_Send_Notification_Task);
 	/* Create timer to change the Temperature and update charecteristic */
 
 	//initilizing ble timers
@@ -177,6 +204,12 @@ void SMART_WATCH_APP_Init(void) {
 	      &(SMART_WATCH_App_Context.ucUpdate_Humidity_Id),
 	      hw_ts_Repeated,
 		  SMART_WATCH_Humidity_Timer_Callback);
+
+	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
+	      &(SMART_WATCH_App_Context.ucUpdate_LUX_Id),
+	      hw_ts_Repeated,
+		  SMART_WATCH_LUX_Timer_Callback);
+
 	APP_DBG_MSG("Humidity soft BLE timer created \n");
 	/**
 	 * Initialize Template application context
@@ -190,7 +223,6 @@ void SMART_WATCH_APP_Init(void) {
  * LOCAL FUNCTIONS
  *
  *************************************************************/
-
 static void SMART_WATCH_Humidity_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
@@ -200,14 +232,15 @@ static void SMART_WATCH_Humidity_Timer_Callback(void){
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_HUMIDITY, CFG_SCH_PRIO_0);//CFG_SCH_PRIO_0
 	tmpVal.f = mSi7021Sensor.fHumidty;
 	ucPrintCounter++;
-	if(ucPrintCounter==10){
+	if(ucPrintCounter==5){
 		LCD_BLE_HTS_PrintHumidity(tmpVal.f);
 		ucPrintCounter=0;
 	}
 	for(i=0;i<4;i++)
 		value[i] = tmpVal.uc[i];
-	SMART_WATCH_STM_App_Update_Char(0x0002, (uint8_t *) &value); //TODO
+	SMART_WATCH_STM_App_Update_Char(0x0002, (uint8_t *) &value);
 }
+
 static void SMART_WATCH_Temperature_Timer_Callback(void){
 	static unsigned char ucPrintCounter=0;
 	static unsigned char value[4];
@@ -217,13 +250,13 @@ static void SMART_WATCH_Temperature_Timer_Callback(void){
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_TEMPERATURE, CFG_SCH_PRIO_0);
 	tmpVal.f = mSi7021Sensor.fTemperature;
 	ucPrintCounter++;
-	if(ucPrintCounter==10){
+	if(ucPrintCounter==5){
 		LCD_BLE_HTS_PrintTemperature(mSi7021Sensor.fTemperature);
 		ucPrintCounter=0;
 	}
 	for(i=0;i<4;i++)
 		value[i] = tmpVal.uc[i];
-	SMART_WATCH_STM_App_Update_Char(0x0001, (uint8_t *) &value); //TODO
+	SMART_WATCH_STM_App_Update_Char(0x0001, (uint8_t *) &value);
 }
 
 static void SMART_WATCH_EGR_Timer_Callback(void) {
@@ -235,8 +268,23 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 	LCD_BLE_CS_PrintBPM(tmpVal.uc[0]);
 	value[0]=tmpVal.uc[0];
 	value[1]=tmpVal.uc[1];
-	SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value); //TODO
+	SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value);
 }
+
+static void SMART_WATCH_LUX_Timer_Callback(void) {
+	static unsigned char value[4];
+	unionTypeDef tmpVal;
+	int i =0;
+
+	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_LUX, CFG_SCH_PRIO_0);
+	tmpVal.ui = mTsl2561Sensor.uiLuxValue;
+	LCD_BLE_HTS_LUX(tmpVal.ui);
+	for(i=0;i<4;i++)
+		value[i] = tmpVal.uc[i];
+
+	SMART_WATCH_STM_App_Update_Char(0x0003, (uint8_t *) &value);
+}
+
 static void SMART_WATCH_context_Init(void) {
 	APP_DBG_MSG("Initializing ble context properties.\n");
 	//Proximity light sensor
@@ -274,7 +322,6 @@ static void SMART_WATCH_Send_Notification_Task(void) {
 		value++;
 	}
 	if (SMART_WATCH_App_Context.ucNotificationStatus) {
-	//	 SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value); //TODO
 	} else {
 	}
 	return;

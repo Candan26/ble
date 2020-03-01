@@ -33,8 +33,8 @@
 #include "shci.h"
 #include "lpm.h"
 #include "otp.h"
-#include "p2p_server_app.h"
-#include "template_server_app.h"
+
+#include "smart_watch_stm.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -228,7 +228,6 @@ PLACE_IN_SECTION("TAG_OTA_START") const uint32_t MagicKeywordAddress = (uint32_t
 PLACE_IN_SECTION("BLE_APP_CONTEXT") static BleApplicationContext_t BleApplicationContext;
 PLACE_IN_SECTION("BLE_APP_CONTEXT") static uint16_t AdvIntervalMin, AdvIntervalMax;
 
-P2PS_APP_ConnHandle_Not_evt_t handleNotification;
 
 #if L2CAP_REQUEST_NEW_CONN_PARAM != 0
 #define SIZE_TAB_CONN_INT            2
@@ -440,7 +439,7 @@ void APP_BLE_Init( void )
    * Initialization of the BLE Services
    */
   SVCCTL_Init();
-  SVCCTL_InitSmartWatchSvc();//TODO *
+  SVCCTL_InitSmartWatchSvc();
 
   /**
    * Initialization of the BLE App Context
@@ -465,10 +464,6 @@ void APP_BLE_Init( void )
   index_con_int = 0; 
   mutex = 1; 
 #endif
-  /**
-   * Initialize P2P Server Application
-   */
-  P2PS_APP_Init();
 
   /**
    * Initialize Custom Server Application
@@ -525,6 +520,8 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
       {
         BleApplicationContext.BleApplicationContext_legacy.connectionHandle = 0;
         BleApplicationContext.Device_Connection_Status = APP_BLE_IDLE;
+        //TODO add screen process
+        LCD_BLE_PrintStatus((char *)"ADVERTISING");
 #if(CFG_DEBUG_APP_TRACE != 0)
         APP_DBG_MSG("\r\n\r** DISCONNECTION EVENT WITH CLIENT \n");
 #endif        
@@ -535,10 +532,6 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
  /*
 * SPECIFIC to P2P Server APP
 */     
-        handleNotification.P2P_Evt_Opcode = PEER_DISCON_HANDLE_EVT;
-        handleNotification.ConnectionHandle = BleApplicationContext.BleApplicationContext_legacy.connectionHandle;
-        P2PS_APP_Notification(&handleNotification);
-
 }
 
     break; /* EVT_DISCONN_COMPLETE */
@@ -556,7 +549,7 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
           APP_DBG_MSG("\r\n\r** CONNECTION UPDATE EVENT WITH CLIENT \n");
 #endif
           /* USER CODE BEGIN EVT_LE_CONN_UPDATE_COMPLETE */
-
+          LCD_BLE_PrintStatus("CONNECTED");
           /* USER CODE END EVT_LE_CONN_UPDATE_COMPLETE */
           break;
         case EVT_LE_CONN_COMPLETE:
@@ -589,9 +582,6 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
  /*
 * SPECIFIC to P2P Server APP
 */             
-          handleNotification.P2P_Evt_Opcode = PEER_CONN_HANDLE_EVT;
-          handleNotification.ConnectionHandle = BleApplicationContext.BleApplicationContext_legacy.connectionHandle;
-          P2PS_APP_Notification(&handleNotification);
           /* USER CODE BEGIN HCI_EVT_LE_CONN_COMPLETE */
 
           /* USER CODE END HCI_EVT_LE_CONN_COMPLETE */
@@ -993,6 +983,7 @@ static void Adv_Cancel( void )
     BleApplicationContext.Device_Connection_Status = APP_BLE_IDLE;
     if (result == BLE_STATUS_SUCCESS)
     {
+    	LCD_BLE_PrintStatus("SLEEPING");
 #if(CFG_DEBUG_APP_TRACE != 0)
       APP_DBG_MSG("  \r\n\r");APP_DBG_MSG("** STOP ADVERTISING **  \r\n\r");
 #endif

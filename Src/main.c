@@ -30,6 +30,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #include "si7021.h"
+#include "tsl2561.h"
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -141,7 +142,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (uiAD8232Values >= 15) {
 			uiAD8232Values = 0;
 			prsCheckAI();
-			vSi7021ProcessHumidityAndTemperature(); //TODO seperate this two line to a method
+			vSi7021ProcessHumidityAndTemperature();
+			vTsl2561ProcessLuminity();
 		}
 	}
 }
@@ -170,6 +172,7 @@ void systemInit(void) {
 	//initAdc();
 	initInterrupts();
 	vInitsi7021();
+	tTsl2561Init();
 }
 
 void vSetAd8232AnalogValue(unsigned int value) {

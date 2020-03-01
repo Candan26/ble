@@ -455,6 +455,7 @@ typedef enum
   CFG_MY_TASK_NOTIFY_EGR,
   CFG_MY_TASK_NOTIFY_TEMPERATURE,
   CFG_MY_TASK_NOTIFY_HUMIDITY,
+  CFG_MY_TASK_NOTIFY_LUX,
 /* USER CODE END CFG_Task_Id_With_HCI_Cmd_t */
     CFG_LAST_TASK_ID_WITH_HCICMD,                                               /**< Shall be LAST in the list */
 } CFG_Task_Id_With_HCI_Cmd_t;

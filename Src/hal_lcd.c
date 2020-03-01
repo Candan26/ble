@@ -7,7 +7,7 @@
 #define LCD_BUFFER_LENGHT 64
 static char tempLcdBuffer[LCD_BUFFER_LENGHT];
 
-//TODO CANDAN EDITION
+//TODO *
 unsigned short usBpmPoslastX;
 unsigned short usBpmPoslastY;
 unsigned short usBpmPosX;
@@ -107,17 +107,15 @@ void LCD_Print(char* line1, char* line2){
     /* Clear screen first */
     SSD1306_Fill(SSD1306_COLOR_BLACK);
 
-    SSD1306_GotoXY(0,0);
+    SSD1306_GotoXY(34,10);
     /* put Medium size by default */
-    Font = Font_11x18;
+    Font = Font_7x10;
     SSD1306_Puts(line1, &Font, SSD1306_COLOR_WHITE);
 
     if(line2 != NULL)
     {
         Font = Font_7x10;
-        SSD1306_GotoXY(0,22);
-        SSD1306_Puts("-> ", &Font, SSD1306_COLOR_WHITE);
-        SSD1306_GotoXY(20,22);
+        SSD1306_GotoXY(34,21);
         SSD1306_Puts(line2, &Font, SSD1306_COLOR_WHITE);
     }
 
@@ -181,12 +179,11 @@ void LCD_BLE_PrintLogo(void)
   SSD1306_UpdateScreen();
 }
 
-void LCD_BLE_PrintStatus(char * status)
+void LCD_BLE_PrintStatus( char * status)
 {
-  SSD1306_DrawFilledRectangle(31,20,100,12,SSD1306_COLOR_BLACK);
-  SSD1306_DrawFilledRectangle(31,20,5 + (strlen(status) * 7),12,SSD1306_COLOR_WHITE);
-  SSD1306_GotoXY(34,22);
-  SSD1306_Puts(status, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Fill(SSD1306_COLOR_BLACK);
+  SSD1306_GotoXY(34,10);
+  SSD1306_Puts(status, &Font_7x10, SSD1306_COLOR_WHITE);
   SSD1306_UpdateScreen();
 }
 
@@ -200,7 +197,7 @@ void LCD_BLE_HRS_PrintBPM(uint8_t BPM)
 }
 
 void floatToUcharArray(float dest, char *pArray){
-	char tempBufer[10];
+	char tempBufer[2];
 	int iPart;
 	int fPart;
 
@@ -208,14 +205,26 @@ void floatToUcharArray(float dest, char *pArray){
 	fPart= (dest*100)-(iPart*100);
 	sprintf(tempBufer,"%d",iPart);
 	strcat(pArray,tempBufer);
-	strcat(pArray,(char *)".");
-	sprintf(pArray,"%d",fPart);
+	tempBufer[0]='.';
+	tempBufer[1]=0;
+	strcat(pArray,tempBufer);
+	sprintf(tempBufer,"%d", fPart);
 	strcat(pArray,tempBufer);
 }
+void  LCD_BLE_HTS_LUX(uint32_t lux){
+	  char tempBufer[10];
 
-void LCD_BLE_HTS_PrintTemperature(float temperature)
-{
+	  memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
+	  sprintf(tempLcdBuffer,(char *)"Lux: ");
+	  sprintf(tempBufer,"%d",lux);
+	  strcat(tempLcdBuffer,tempBufer);
+	  SSD1306_Fill(SSD1306_COLOR_BLACK);
+	  SSD1306_GotoXY(7,8);
+	  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+	  SSD1306_UpdateScreen();
+}
 
+void LCD_BLE_HTS_PrintTemperature(float temperature){
   memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
   sprintf(tempLcdBuffer,(char *)"Temp: ");
   floatToUcharArray(temperature,&tempLcdBuffer[6]);

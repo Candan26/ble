@@ -9,6 +9,7 @@
 
 #define hi2ctsl2561 hi2c3
 
+typedefTsl2561 mTsl2561Sensor;
 //function prototypes
 uint32_t tTsl2561CalculateLux(uint16_t ch0, uint16_t ch1);
 tsl2561Error_t tTsl2561WriteCmd(uint8_t cmd);
@@ -18,9 +19,16 @@ tsl2561Error_t tTsl2561Enable(void);
 tsl2561Error_t tTsl2561Disable(void);
 
 //static defs
-static unsigned char _tsl2561Initialised = 0;
-static tsl2561IntegrationTime_t _tsl2561IntegrationTime = TSL2561_INTEGRATIONTIME_402MS;
+static tsl2561IntegrationTime_t _tsl2561IntegrationTime = TSL2561_INTEGRATIONTIME_13MS;
 static tsl2561Gain_t _tsl2561Gain = TSL2561_GAIN_0X;
+
+void vTsl2561ProcessLuminity(){
+	if(mTsl2561Sensor.ucSeqCounter>INTEGRATIONTIME_SEQ_COUNTER_13MS){
+		mTsl2561Sensor.uiLuxValue=tTsl2561CalculateLux(mTsl2561Sensor.usBroadband,mTsl2561Sensor.usIr);
+		mTsl2561Sensor.ucSeqCounter=0;
+	}
+	tTsl2561GetLuminosity(&mTsl2561Sensor.usBroadband,&mTsl2561Sensor.usIr);
+}
 
 tsl2561Error_t tTsl2561WriteCmd(uint8_t cmd) {
 	unsigned char ucI2cAddr = TSL2561_ADDRESS;
@@ -34,7 +42,7 @@ tsl2561Error_t tTsl2561WriteCmd(uint8_t cmd) {
 tsl2561Error_t tTsl2561Write8(uint8_t reg, uint32_t value) {
 	unsigned char ucI2cAddr = TSL2561_ADDRESS;
 	unsigned char ucaSend[2] = { reg, (value & 0xFF) };
-	if (HAL_I2C_Master_Transmit(&hi2ctsl2561, ucI2cAddr, ucaSend, 2, 300)
+	if (HAL_I2C_Master_Transmit(&hi2ctsl2561, ucI2cAddr, ucaSend, 2, 100)
 			== HAL_OK)
 		return TSL2561_ERROR_OK;
 	return TSL2561_ERROR_LAST;
@@ -45,9 +53,9 @@ tsl2561Error_t tTsl2561Read16(uint8_t reg, uint16_t *value) {
 	unsigned char ucaSend[1] = { reg };
 	unsigned char ucaResponse[2];
 
-	if (HAL_I2C_Master_Transmit(&hi2ctsl2561, ucI2cAddr, ucaSend, 1, 300)!= HAL_OK)
+	if (HAL_I2C_Master_Transmit(&hi2ctsl2561, ucI2cAddr, ucaSend, 1, 100)!= HAL_OK)
 		return TSL2561_ERROR_LAST;
-	if (HAL_I2C_Master_Receive(&hi2ctsl2561, ucI2cAddr, ucaResponse, 2, 300)!= HAL_OK)
+	if (HAL_I2C_Master_Receive(&hi2ctsl2561, ucI2cAddr, ucaResponse, 2, 100)!= HAL_OK)
 		return TSL2561_ERROR_LAST;
 	// Shift values to create properly formed integer (low byte first)
 	*value = (ucaResponse[0] | ucaResponse[1] << 8);
@@ -55,23 +63,21 @@ tsl2561Error_t tTsl2561Read16(uint8_t reg, uint16_t *value) {
 }
 
 tsl2561Error_t tTsl2561Enable(void) {
-	if (!_tsl2561Initialised)
-		tTsl2561Init();
+
 	// Enable the device by setting the control bit to 0x03
 	return tTsl2561Write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL,
 	TSL2561_CONTROL_POWERON);
 }
 
 tsl2561Error_t tTsl2561Disable(void) {
-	if (!_tsl2561Initialised)
-		tTsl2561Init();
+
 	// Turn the device off to save power
 	return tTsl2561Write8(TSL2561_COMMAND_BIT | TSL2561_REGISTER_CONTROL,
 	TSL2561_CONTROL_POWEROFF);
 }
 
 tsl2561Error_t tTsl2561Init(void) {
-	_tsl2561Initialised = 0;
+	mTsl2561Sensor.ucSeqCounter=0;
 	// Set default integration time and gain
 	tTsl2561SetTiming(_tsl2561IntegrationTime, _tsl2561Gain);
 	// Note: by default, the device is in power down mode on bootup
@@ -79,8 +85,7 @@ tsl2561Error_t tTsl2561Init(void) {
 }
 
 tsl2561Error_t tTsl2561SetTiming(tsl2561IntegrationTime_t integration, tsl2561Gain_t gain) {
-	if (!_tsl2561Initialised)
-		tTsl2561Init();
+
 	tsl2561Error_t error = TSL2561_ERROR_OK;
 	// Enable the device by setting the control bit to 0x03
 	error = tTsl2561Enable();
@@ -107,26 +112,28 @@ tsl2561Error_t tTsl2561SetTiming(tsl2561IntegrationTime_t integration, tsl2561Ga
 
 tsl2561Error_t tTsl2561GetLuminosity(uint16_t *broadband, uint16_t *ir) {
 
-	if (!_tsl2561Initialised)
-		tTsl2561Init();
 
 	tsl2561Error_t error = TSL2561_ERROR_OK;
 
 	// Enable the device by setting the control bit to 0x03
-	error = tTsl2561Enable();
+	if(mTsl2561Sensor.ucSeqCounter==0)
+		error = tTsl2561Enable();
 	if (error)
 		return error;
-
+	mTsl2561Sensor.ucSeqCounter++;
 	// Wait x ms for ADC to complete
 	switch (_tsl2561IntegrationTime) {
 	case TSL2561_INTEGRATIONTIME_13MS:
-		//HAL_Delay(14); TODO
+		if(mTsl2561Sensor.ucSeqCounter<=INTEGRATIONTIME_SEQ_COUNTER_13MS)
+			return TSL2561_ERROR_LAST;
 		break;
 	case TSL2561_INTEGRATIONTIME_101MS:
-		//HAL_Delay(102);
+		if(mTsl2561Sensor.ucSeqCounter<=INTEGRATIONTIME_SEQ_COUNTER_101MS)
+			return TSL2561_ERROR_LAST;
 		break;
 	default:
-		//HAL_Delay(400);
+		if(mTsl2561Sensor.ucSeqCounter<=INTEGRATIONTIME_SEQ_COUNTER_DEFAULT)
+			return TSL2561_ERROR_LAST;
 		break;
 	}
 
@@ -148,7 +155,6 @@ tsl2561Error_t tTsl2561GetLuminosity(uint16_t *broadband, uint16_t *ir) {
 	error = tTsl2561Disable();
 	if (error)
 		return error;
-
 	return error;
 }
 

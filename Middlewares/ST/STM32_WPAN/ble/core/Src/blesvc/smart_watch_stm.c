@@ -1,6 +1,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "common_blesvc.h"
-
+#include "hal_lcd.h"
 #include "smart_watch_stm.h"
 /* Private typedef -----------------------------------------------------------*/
 typedef struct {
@@ -9,6 +9,7 @@ typedef struct {
 	uint16_t SmartWatchNotifyEGRCharHdle; /**< EGR Characteristic handle handle */
 	uint16_t SmartWatchNotifyTemperatureCharHdle;/**< Temperature Characteristic handle handle */
 	uint16_t SmartWatchNotifyHumidityCharHdle;/**< Humidity Characteristic handle handle */
+	uint16_t SmartWatchNotifyLUXCharHdle;/**< LUX Characteristic handle handle */
 	uint16_t RebootReqCharHdle; /**< Characteristic handle */
 } SmartWatchContext_t;
 
@@ -57,11 +58,12 @@ do {\
  D973F2E1-B19E-11E2-9E96-0800200C9A66: Characteristic_1 128bits UUID
  D973F2E2-B19E-11E2-9E96-0800200C9A66: Characteristic_2 128bits UUID
  */
-#define COPY_SMART_WATCH_SERVICE_UUID(uuid_struct)       COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x8a,0x34,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
-#define COPY_SMART_WATCH_WRITE_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x00,0x00,0xAA,0xCC,0x8e,0x22,0x45,0x41,0x9d,0x4c,0x21,0xed,0xae,0x82,0xed,0x19)
-#define COPY_SMART_WATCH_TEMPERATURE_UUID(uuid_struct)        COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x90,0xA4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
-#define COPY_SMART_WATCH_HUMIDITY_UUID(uuid_struct)   COPY_UUID_128(uuid_struct,0x74,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_SERVICE_UUID(uuid_struct)       	 COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x8a,0x34,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_WRITE_CHAR_UUID(uuid_struct)    	 COPY_UUID_128(uuid_struct,0x00,0x00,0xAA,0xCC,0x8e,0x22,0x45,0x41,0x9d,0x4c,0x21,0xed,0xae,0x82,0xed,0x19)
+#define COPY_SMART_WATCH_TEMPERATURE_UUID(uuid_struct)   	 COPY_UUID_128(uuid_struct,0x94,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x90,0xA4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 #define COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid_struct)    COPY_UUID_128(uuid_struct,0x84,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0xA4,0xB4,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_HUMIDITY_UUID(uuid_struct)      	 COPY_UUID_128(uuid_struct,0x74,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
+#define COPY_SMART_WATCH_LUX_UUID(uuid_struct)      	 	 COPY_UUID_128(uuid_struct,0x64,0x53,0x8a,0xee,0xdd,0x71,0x11,0xe9,0x98,0xA9,0x2a,0x2a,0xe2,0xdb,0xcc,0xe4)
 
 /**
  * @brief  Event handler
@@ -73,7 +75,6 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 	hci_event_pckt *event_pckt;
 	evt_blue_aci *blue_evt;
 	aci_gatt_attribute_modified_event_rp0 * attribute_modified;
-	//TEMPLATE_STM_App_Notification_evt_t Notification;
 	SMART_WATCH_STM_App_Notification_evt_t Notification;
 	return_value = SVCCTL_EvtNotAck;
 	event_pckt = (hci_event_pckt *) (((hci_uart_pckt*) Event)->data);
@@ -99,6 +100,7 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 					SMART_WATCH_STM_App_Notification(&Notification);
 				} else {
 					APP_DBG_MSG("-- GATT : EGR char notification disabled\n");
+					LCD_Print("SELECT", "CHARACTER");
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
 					SMART_WATCH_STM_App_Notification(&Notification);
 				}
@@ -111,6 +113,7 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 					SMART_WATCH_STM_App_Notification_TEMPERATURE(&Notification);
 				} else {
 					APP_DBG_MSG("-- GATT : Temperature char notification disabled\n");
+					LCD_Print("SELECT", "CHARACTER");
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
 					SMART_WATCH_STM_App_Notification_TEMPERATURE(&Notification);
 				}
@@ -123,8 +126,22 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 					SMART_WATCH_STM_App_Notification_HUMIDITY(&Notification);
 				} else {
 					APP_DBG_MSG("-- GATT : Humidity  char notification disabled\n");
+					LCD_Print("SELECT", "CHARACTER");
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
 					SMART_WATCH_STM_App_Notification_HUMIDITY(&Notification);
+				}
+			}
+			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyLUXCharHdle + 2)){
+				return_value = SVCCTL_EvtAckFlowEnable;
+				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
+					APP_DBG_MSG("-- GATT : LUX  char notification enabled\n");
+					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
+					SMART_WATCH_STM_App_Notification_LUX(&Notification);
+				} else {
+					APP_DBG_MSG("-- GATT : LUX  char notification disabled\n");
+					LCD_Print("SELECT", "CHARACTER");
+					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
+					SMART_WATCH_STM_App_Notification_LUX(&Notification);
 				}
 			}
 			else if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle+ 1)) {
@@ -191,7 +208,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 
 	COPY_SMART_WATCH_SERVICE_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_service(UUID_TYPE_128, (Service_UUID_t *) &uuid16,
-	PRIMARY_SERVICE, 16, /*Max_Attribute_Records*/
+	PRIMARY_SERVICE, 20, /*Max_Attribute_Records*/
 	&(aSmartWatchContext.SmartWatchSvcHdle));
 
 	/**
@@ -233,7 +250,6 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	1, /* isVariable: 1 */
 	&(aSmartWatchContext.SmartWatchNotifyHumidityCharHdle));
 
-
 	COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
@@ -243,6 +259,18 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	10, /* encryKeySize */
 	1, /* isVariable: 1 */
 	&(aSmartWatchContext.SmartWatchNotifyEGRCharHdle));
+
+	COPY_SMART_WATCH_LUX_UUID(uuid16.Char_UUID_128);
+	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
+	UUID_TYPE_128, &uuid16, 4,
+	CHAR_PROP_NOTIFY | CHAR_PROP_READ | CHAR_PROP_WRITE,
+	ATTR_PERMISSION_NONE,
+	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
+	10, /* encryKeySize */
+	1, /* isVariable: 1 */
+	&(aSmartWatchContext.SmartWatchNotifyLUXCharHdle));
+
+
 	return;
 }
 
@@ -255,7 +283,6 @@ void SVCCTL_InitSmartWatchSvc(void) {
 tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 	tBleStatus result = BLE_STATUS_INVALID_PARAMS;
 	switch (UUID) {
-	//TODO add each character on this method
 	case 0x0000:
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,
@@ -272,6 +299,7 @@ tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 				4, /* charValueLen */
 				(uint8_t *) pPayload);
 		break;
+
 	case 0x0002:
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,
@@ -279,11 +307,20 @@ tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 				4, /* charValueLen */
 				(uint8_t *) pPayload);
 		break;
+
+	case 0x0003:
+		result = aci_gatt_update_char_value(
+				aSmartWatchContext.SmartWatchSvcHdle,
+				aSmartWatchContext.SmartWatchNotifyLUXCharHdle, 0, /* charValOffset */
+				4, /* charValueLen */
+				(uint8_t *) pPayload);
+		break;
+
 	default:
 		break;
 	}
 
 	return result;
-}/* end TEMPLATE_STM_Init() */
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

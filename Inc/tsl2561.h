@@ -79,6 +79,10 @@
 #define TSL2561_LUX_B8C           (0x0000)  // 0.000 * 2^LUX_SCALE
 #define TSL2561_LUX_M8C           (0x0000)  // 0.000 * 2^LUX_SCALE
 
+#define INTEGRATIONTIME_SEQ_COUNTER_13MS 1
+#define INTEGRATIONTIME_SEQ_COUNTER_101MS 5
+#define INTEGRATIONTIME_SEQ_COUNTER_DEFAULT 10
+
 enum
 {
   TSL2561_REGISTER_CONTROL          = 0x00,
@@ -121,6 +125,22 @@ typedef enum
 tsl2561Error_t;
 
 
+typedef struct {
+
+	uint8_t ucSeqCounter;
+	uint8_t ucRegisterID;
+
+	uint16_t usBroadband;
+	uint16_t usIr;
+
+	volatile uint32_t uiLuxValue;
+
+
+}typedefTsl2561;
+
+extern typedefTsl2561 mTsl2561Sensor;
+
+void vTsl2561ProcessLuminity();
 tsl2561Error_t tTsl2561Init(void);
 tsl2561Error_t tTsl2561SetTiming(tsl2561IntegrationTime_t integration, tsl2561Gain_t gain);
 tsl2561Error_t tTsl2561GetLuminosity (uint16_t *broadband, uint16_t *ir);

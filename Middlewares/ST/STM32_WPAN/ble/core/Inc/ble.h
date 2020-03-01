@@ -58,9 +58,9 @@ extern "C" {
 #include "ias.h"
 #include "lls.h"
 #include "tps.h"
-#include "p2p_stm.h"
 #include "otas_stm.h"
-#include "template_stm.h"
+
+#include "smart_watch_stm.h"
 #include "mesh.h"  
   
 #include "svc_ctl.h"

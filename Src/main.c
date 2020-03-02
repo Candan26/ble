@@ -31,6 +31,7 @@
 /* USER CODE BEGIN PTD */
 #include "si7021.h"
 #include "tsl2561.h"
+#include "kalman.h"
 //TODO Pars analog datas
 /* USER CODE END PTD */
 
@@ -177,6 +178,7 @@ void systemInit(void) {
 	initInterrupts();
 	vInitsi7021();
 	tTsl2561Init();
+	vInitKalman(KALMAN_FILTER_ACTIVATION_LEVEL,0,KALMAN_FILTER_DEFAULT_MIN_CRETERIA);
 }
 
 void vSetAd8232AnalogValue(unsigned int value) {

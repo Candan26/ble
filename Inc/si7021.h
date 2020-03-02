@@ -48,9 +48,10 @@ typedef struct {
 	uint8_t ucTempOrHumidty;
 
 }typedef_si7021;
+
+//function prototypes
 //global functions
 unsigned char vInitsi7021();
-
 void vSi7021ProcessHumidityAndTemperature();
 
 

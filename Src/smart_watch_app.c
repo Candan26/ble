@@ -10,6 +10,7 @@
 #include "main.h"
 #include "si7021.h"
 #include "tsl2561.h"
+#include "kalman.h"
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -263,7 +264,7 @@ static void SMART_WATCH_Humidity_Timer_Callback(void){
 		ucPrintCounter=0;
 	}
 	for(i=0;i<4;i++)
-		value[i] = tmpVal.uc[i];
+		value[3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(0x0002, (uint8_t *) &value);
 }
 
@@ -281,7 +282,7 @@ static void SMART_WATCH_Temperature_Timer_Callback(void){
 		ucPrintCounter=0;
 	}
 	for(i=0;i<4;i++)
-		value[i] = tmpVal.uc[i];
+		value[3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(0x0001, (uint8_t *) &value);
 }
 
@@ -292,8 +293,8 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_EGR, CFG_SCH_PRIO_0);
 	tmpVal.us = usGetAd8232AnalogValue();
 	LCD_BLE_CS_PrintBPM(tmpVal.uc[0]);
-	value[0]=tmpVal.uc[0];
-	value[1]=tmpVal.uc[1];
+	value[1]=tmpVal.uc[0];
+	value[0]=tmpVal.uc[1];
 	SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value);
 }
 
@@ -306,7 +307,7 @@ static void SMART_WATCH_LUX_Timer_Callback(void) {
 	tmpVal.ui = mTsl2561Sensor.uiLuxValue;
 	LCD_BLE_HTS_LUX(tmpVal.ui);
 	for(i=0;i<4;i++)
-		value[i] = tmpVal.uc[i];
+		value[3-i] = tmpVal.uc[i];
 
 	SMART_WATCH_STM_App_Update_Char(0x0003, (uint8_t *) &value);
 }
@@ -318,9 +319,10 @@ static void SMART_WATCH_GSR_Timer_Callback(void){
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_GSR, CFG_SCH_PRIO_0);
 	//TODO add LCD and
 	tmpVal.f=fGetGSRHumanResistance();
+	tmpVal.f =(float)dCalculateKalmanDataSet((double)tmpVal.f);
 	LCD_BLE_HTS_GSR(tmpVal.f);
 	for(i=0;i<4;i++)
-		value[i] = tmpVal.uc[i];
+		value[3-i] = tmpVal.uc[i];
 
 	SMART_WATCH_STM_App_Update_Char(0x0004, (uint8_t *) &value);
 }

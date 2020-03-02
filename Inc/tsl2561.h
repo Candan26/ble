@@ -140,6 +140,7 @@ typedef struct {
 
 extern typedefTsl2561 mTsl2561Sensor;
 
+//function prototypes
 void vTsl2561ProcessLuminity();
 tsl2561Error_t tTsl2561Init(void);
 tsl2561Error_t tTsl2561SetTiming(tsl2561IntegrationTime_t integration, tsl2561Gain_t gain);

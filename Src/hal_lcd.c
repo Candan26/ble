@@ -12,25 +12,11 @@ unsigned short usBpmPoslastX;
 unsigned short usBpmPoslastY;
 unsigned short usBpmPosX;
 unsigned short usBpmPosY;
-int postorier=10;
+int postorier=15;
 int percentageOfReduction=5;
+uint32_t maxRangeOfGSR=1024;
 void floatToUcharArray(float dest, char *pArray);
 
-void LCD_BLE_CS_PrintBPM(int analogValue){
-	if(usBpmPosX> 127 || usBpmPosX==0 ){
-		SSD1306_Fill(SSD1306_COLOR_BLACK);
-		SSD1306_UpdateScreen();
-		usBpmPosX=1;
-		usBpmPoslastX=usBpmPosX;
-	}
-	unsigned char tmpVal=analogValue;
-	usBpmPosY= postorier+(tmpVal*(0.2509)/percentageOfReduction); //60-(analogValue/10);
-	SSD1306_DrawLine(usBpmPoslastX,usBpmPoslastY,usBpmPosX,usBpmPosY,SSD1306_COLOR_WHITE);
-	SSD1306_UpdateScreen();
-	usBpmPoslastX=usBpmPosX;
-	usBpmPoslastY=usBpmPosY;
-	usBpmPosX++;
-}
 
 void LCD_Init(void)
 {
@@ -217,7 +203,7 @@ void  LCD_BLE_HTS_LUX(uint32_t lux){
 
 	  memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
 	  sprintf(tempLcdBuffer,(char *)"Lux: ");
-	  sprintf(tempBufer,"%d",lux);
+	  sprintf(tempBufer,"%d",(int)lux);
 	  strcat(tempLcdBuffer,tempBufer);
 	  SSD1306_Fill(SSD1306_COLOR_BLACK);
 	  SSD1306_GotoXY(7,8);
@@ -229,16 +215,58 @@ void LCD_BLE_HTS_GSR(float gsr){
 	 char tempBufer[10];
 	 int iGsr=gsr;
 
-	  memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
-	  sprintf(tempLcdBuffer,(char *)"GSR: ");
-	  sprintf(tempBufer,"%d",iGsr);
-	  strcat(tempLcdBuffer,tempBufer);
 
-	  SSD1306_Fill(SSD1306_COLOR_BLACK);
-	  SSD1306_GotoXY(7,8);
-	  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
-	  SSD1306_UpdateScreen();
+	 if(usBpmPosX> 127 || usBpmPosX==0 ){
+		 SSD1306_Fill(SSD1306_COLOR_BLACK);
+		 SSD1306_UpdateScreen();
+		 usBpmPosX=1;
+		 usBpmPoslastX=usBpmPosX;
+
+	 }
+
+	 SSD1306_DrawFilledRectangle(0,0,10,32,SSD1306_COLOR_BLACK);
+	 memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
+	 sprintf(tempLcdBuffer,(char *)"GSR: ");
+	 sprintf(tempBufer,"%d",iGsr);
+	 strcat(tempLcdBuffer,tempBufer);
+	 SSD1306_GotoXY(0,0);
+	 gsr=(gsr/maxRangeOfGSR)*0xFF;
+	 SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+	 usBpmPosY= postorier+(gsr*(0.2509)/percentageOfReduction); //60-(analogValue/10);
+	 SSD1306_DrawLine(usBpmPoslastX,usBpmPoslastY,usBpmPosX,usBpmPosY,SSD1306_COLOR_WHITE);
+	 SSD1306_UpdateScreen();
+	 usBpmPoslastX=usBpmPosX;
+	 usBpmPoslastY=usBpmPosY;
+	 usBpmPosX++;
 }
+
+void LCD_BLE_CS_PrintBPM(int analogValue){
+	char tempBufer[10];
+
+	if(usBpmPosX> 127 || usBpmPosX==0 ){
+		SSD1306_Fill(SSD1306_COLOR_BLACK);
+		SSD1306_UpdateScreen();
+		usBpmPosX=1;
+		usBpmPoslastX=usBpmPosX;
+	}
+
+	SSD1306_DrawFilledRectangle(0,0,10,32,SSD1306_COLOR_BLACK);
+	memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);
+	sprintf(tempLcdBuffer,(char *)"EGR: ");
+	sprintf(tempBufer,"%d",analogValue);
+	strcat(tempLcdBuffer,tempBufer);
+	SSD1306_GotoXY(0,0);
+	SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+
+	unsigned char tmpVal=analogValue;
+	usBpmPosY= postorier+(tmpVal*(0.2509)/percentageOfReduction); //60-(analogValue/10);
+	SSD1306_DrawLine(usBpmPoslastX,usBpmPoslastY,usBpmPosX,usBpmPosY,SSD1306_COLOR_WHITE);
+	SSD1306_UpdateScreen();
+	usBpmPoslastX=usBpmPosX;
+	usBpmPoslastY=usBpmPosY;
+	usBpmPosX++;
+}
+
 
 void LCD_BLE_HTS_PrintTemperature(float temperature){
   memset(tempLcdBuffer,0,LCD_BUFFER_LENGHT);

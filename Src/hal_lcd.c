@@ -197,6 +197,27 @@ void floatToUcharArray(float dest, char *pArray){
 	sprintf(tempBufer,"%d", fPart);
 	strcat(pArray,tempBufer);
 }
+int x =0 , y= 10;
+void LCD_BLE_HTS_Data(){
+	static int iCharCounter = 0;
+
+	memset(tempLcdBuffer, 0, LCD_BUFFER_LENGHT);
+	SSD1306_Fill(SSD1306_COLOR_BLACK);
+	SSD1306_GotoXY(0,0);
+	sprintf(tempLcdBuffer, (char *) "DATA SENDING");
+	SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+	SSD1306_GotoXY(40,14);
+	if(iCharCounter==0){
+		SSD1306_Puts((unsigned char*)"*", &Font_11x18, SSD1306_COLOR_WHITE);
+	}else if(iCharCounter==1){
+		SSD1306_Puts((unsigned char*)"**", &Font_11x18, SSD1306_COLOR_WHITE);
+	}else if(iCharCounter==2) {
+		iCharCounter=-1;
+		SSD1306_Puts((unsigned char*)"***", &Font_11x18, SSD1306_COLOR_WHITE);
+	}
+	SSD1306_UpdateScreen();
+	iCharCounter++;
+}
 
 void  LCD_BLE_HTS_LUX(uint32_t lux){
 	  char tempBufer[10];
@@ -215,13 +236,11 @@ void LCD_BLE_HTS_GSR(float gsr){
 	 char tempBufer[10];
 	 int iGsr=gsr;
 
-
 	 if(usBpmPosX> 127 || usBpmPosX==0 ){
 		 SSD1306_Fill(SSD1306_COLOR_BLACK);
 		 SSD1306_UpdateScreen();
 		 usBpmPosX=1;
 		 usBpmPoslastX=usBpmPosX;
-
 	 }
 
 	 SSD1306_DrawFilledRectangle(0,0,10,32,SSD1306_COLOR_BLACK);

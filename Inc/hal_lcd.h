@@ -31,6 +31,7 @@ void LCD_BLE_CS_PrintBPM(int analogValue);
 void LCD_BLE_HTS_PrintTemperature(float temperature);
 void LCD_BLE_HTS_PrintHumidity(float humidity);
 void LCD_BLE_HTS_GSR(float gsr);
+void LCD_BLE_HTS_Data(void);
 
 #endif /* __HAL_LCD_H */
 /* USER CODE END */

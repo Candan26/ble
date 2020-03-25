@@ -36,6 +36,7 @@ void SMART_WATCH_STM_App_Notification_TEMPERATURE(SMART_WATCH_STM_App_Notificati
 void SMART_WATCH_STM_App_Notification_HUMIDITY(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_LUX(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_GSR(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
+void SMART_WATCH_STM_App_Notification_Data(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload);
 #ifdef __cplusplus
 }

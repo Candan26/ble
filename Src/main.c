@@ -91,6 +91,7 @@ typedef union {
 	unsigned int ui;
 } DataConverterTypeDef;
 DataConverterTypeDef dataConverter;
+typedefBleData bleData;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -191,7 +192,7 @@ void vSetGSRAnalogValue(uint32_t value){
 	uiGSRRawData=value;
 }
 
-float fGetGSRHumanResistance(){
+unsigned int uiGetGSRHumanResistance(){
 	return uiGSRRawData;//((1024+2*uiGSRRawData)*10000)/(512-uiGSRRawData);
 }
 

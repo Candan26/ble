@@ -66,7 +66,11 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+typedef struct {
+	unsigned char ucDataFlag;
+}typedefBleData;
 
+extern typedefBleData bleData;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -111,7 +115,7 @@ void vSetGSRAnalogValue(uint32_t value);
 unsigned char ucGetAd8232AnalogValue();
 unsigned int uiGetAd8232AnalogValue();
 unsigned short usGetAd8232AnalogValue();
-float fGetGSRHumanResistance();
+unsigned int uiGetGSRHumanResistance();
 extern I2C_HandleTypeDef hi2c3;
 /* USER CODE END Private defines */
 

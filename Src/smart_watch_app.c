@@ -313,14 +313,15 @@ static void SMART_WATCH_Temperature_Timer_Callback(void){
 }
 
 static void SMART_WATCH_EGR_Timer_Callback(void) {
-	static unsigned char value[2];
-	ShortUnionTypeDef tmpVal;
+	static unsigned char value[4];
+	unionTypeDef tmpVal;
+	int i=0;
 
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_EGR, CFG_SCH_PRIO_0);
-	tmpVal.us = usGetAd8232AnalogValue();
+	tmpVal.ui = uiGetAd8232AnalogValue();
 	LCD_BLE_CS_PrintBPM(tmpVal.uc[0]);
-	value[1]=tmpVal.uc[0];
-	value[0]=tmpVal.uc[1];
+	for(i=0;i<4;i++)
+		value[3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(0x0000, (uint8_t *) &value);
 }
 
@@ -343,13 +344,11 @@ static void SMART_WATCH_GSR_Timer_Callback(void){
 	unionTypeDef tmpVal;
 	int i =0;
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_GSR, CFG_SCH_PRIO_0);
-	//TODO add LCD and
 	tmpVal.ui=uiGetGSRHumanResistance();
 	tmpVal.ui =(unsigned int)dCalculateKalmanDataSet((double)tmpVal.ui);
 	LCD_BLE_HTS_GSR((float)tmpVal.ui);
 	for(i=0;i<4;i++)
 		value[3-i] = tmpVal.uc[i];
-
 	SMART_WATCH_STM_App_Update_Char(0x0004, (uint8_t *) &value);
 }
 
@@ -412,7 +411,6 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 		bleData.ucDataFlag='S';
 		vSetAdcChannel(ADC_CHANNEL_4);
 	}
-
 	SMART_WATCH_STM_App_Update_Char(0x0005, (uint8_t *) &value);
 }
 

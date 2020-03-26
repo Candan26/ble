@@ -168,8 +168,8 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 				return_value = SVCCTL_EvtAckFlowEnable;
 				if (attribute_modified->Attr_Data[0] & COMSVC_Notification) {
 					APP_DBG_MSG("-- Data : Data  char notification enabled\n");
-					//vSetAdcChannel(ADC_CHANNEL_4);
-					//bleData.ucDataFlag='S';
+					vSetAdcChannel(ADC_CHANNEL_4);
+					bleData.ucDataFlag='S';
 					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
 					SMART_WATCH_STM_App_Notification_Data(&Notification);
 				} else {

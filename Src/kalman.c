@@ -60,6 +60,6 @@ void vInitKalman(int kalman_len, int initial_data, int min_criteria) {
 
 	mKalmanFilter.fP=10;
 	mKalmanFilter.fQ=0.0001;
-	mKalmanFilter.fR=0.05;
+	mKalmanFilter.fR=0.03;
 	mKalmanFilter.fKGain=0;
 }

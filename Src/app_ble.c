@@ -886,6 +886,7 @@ static void Adv_Request(APP_BLE_ConnStatus_t New_Status)
     {
       if (New_Status == APP_BLE_FAST_ADV)
       {
+    	LCD_BLE_PrintStatus("ADVERTISING");
         APP_DBG_MSG("Successfully Start Fast Advertising " );
         /* Start Timer to STOP ADV - TIMEOUT */
         HW_TS_Start(BleApplicationContext.Advertising_mgr_timer_Id, INITIAL_ADV_TIMEOUT);

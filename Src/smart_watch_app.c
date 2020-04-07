@@ -353,11 +353,12 @@ static void SMART_WATCH_GSR_Timer_Callback(void){
 }
 
 static void SMART_WATCH_DATA_Timer_Callback(void){
+	static unsigned char ucDataCounter=0;
 	static unsigned char value[20];
 	unionTypeDef tmpVal;
 	int i =0;
 	static unsigned char ucPrintCounter=0;
-
+#define BLE_SWITCH_THRESHOLD 4
 #define OFFSET_HUMIDTY 0
 #define OFFSET_TEMPERATURE OFFSET_HUMIDTY+4
 #define OFFSET_EGR OFFSET_TEMPERATURE+4
@@ -393,7 +394,6 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 	}else{
 		tmpVal.ui=0;
 	}
-
 	tmpVal.ui =(unsigned int)dCalculateKalmanDataSet((double)tmpVal.ui);
 	for(i=0;i<4;i++)
 		value[OFFSET_GSR+3-i] = tmpVal.uc[i];
@@ -404,13 +404,16 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 		ucPrintCounter=0;
 	}
 
-	if(bleData.ucDataFlag=='S'){
+	if(bleData.ucDataFlag=='S' && ucDataCounter==BLE_SWITCH_THRESHOLD){
+		ucDataCounter=0;
 		bleData.ucDataFlag='H';
 		vSetAdcChannel(ADC_CHANNEL_3);
-	}else if (bleData.ucDataFlag=='H'){
+	}else if (bleData.ucDataFlag=='H' && ucDataCounter==BLE_SWITCH_THRESHOLD){
+		ucDataCounter=0;
 		bleData.ucDataFlag='S';
 		vSetAdcChannel(ADC_CHANNEL_4);
 	}
+	ucDataCounter++;
 	SMART_WATCH_STM_App_Update_Char(0x0005, (uint8_t *) &value);
 }
 

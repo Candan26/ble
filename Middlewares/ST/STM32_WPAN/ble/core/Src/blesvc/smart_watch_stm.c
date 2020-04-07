@@ -377,6 +377,7 @@ tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 				4, /* charValueLen */
 				(uint8_t *) pPayload);
 		break;
+
 	case 0x0005:
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,

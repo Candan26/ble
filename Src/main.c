@@ -32,6 +32,8 @@
 #include "si7021.h"
 #include "tsl2561.h"
 #include "kalman.h"
+#include "max30102.h"
+#include "max30003.h"
 //TODO Pars analog datas
 /* USER CODE END PTD */
 
@@ -52,6 +54,8 @@ I2C_HandleTypeDef hi2c3;
 
 RTC_HandleTypeDef hrtc;
 
+SPI_HandleTypeDef hspi1;
+
 TIM_HandleTypeDef htim16;
 
 UART_HandleTypeDef huart1;
@@ -70,6 +74,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_RTC_Init(void);
 static void MX_RF_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_SPI1_Init(void);
 static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
 volatile uint32_t uiGSRRawData=0;
@@ -149,8 +154,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			uiAD8232Values = 0;
 			prsCheckAI();
 			vSi7021ProcessHumidityAndTemperature();
-			vTsl2561ProcessLuminity();
+			//vTsl2561ProcessLuminity();
 		}
+		vMax30102ReadData();
+		vMax30003ReadData();
 	}
 }
 
@@ -178,8 +185,11 @@ void systemInit(void) {
 	//initAdc();
 	initInterrupts();
 	vInitsi7021();
-	tTsl2561Init();
+	vMax30102Init();
+	vMax30003Init();
+	//tTsl2561Init();
 	vInitKalman(KALMAN_FILTER_ACTIVATION_LEVEL,0,KALMAN_FILTER_DEFAULT_MIN_CRETERIA);
+
 }
 
 void vSetAd8232AnalogValue(unsigned int value) {
@@ -257,6 +267,7 @@ void vSetAdcChannel(uint32_t adcChannel){
 	MX_RTC_Init();
 	MX_RF_Init();
 	MX_ADC1_Init();
+	MX_SPI1_Init();
 	MX_TIM16_Init();
 	/* USER CODE BEGIN 2 */
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
@@ -444,7 +455,45 @@ static void MX_I2C3_Init(void) {
 	/* USER CODE END I2C3_Init 2 */
 
 }
+/**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
 
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 7;
+  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
 /**
  * @brief RF Initialization Function
  * @param None
@@ -608,8 +657,7 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-//	HAL_GPIO_WritePin(DISP_VSS_GPIO_Port, DISP_VSS_Pin, GPIO_PIN_RESET);
-
+	  HAL_GPIO_WritePin(GPIOC, SPI1_CS_Pin, GPIO_PIN_RESET);
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(DISP_VDD_GPIO_Port, DISP_VDD_Pin, GPIO_PIN_SET);
 
@@ -623,6 +671,14 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	HAL_GPIO_Init(DISP_VSS_GPIO_Port, &GPIO_InitStruct);
  */
+
+	/*Configure GPIO pins : MEM_WP_Pin SPI1_CS_Pin */
+	GPIO_InitStruct.Pin = SPI1_CS_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
 	/*Configure GPIO pin : DISP_VDD_Pin */
 	GPIO_InitStruct.Pin = DISP_VDD_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;

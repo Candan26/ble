@@ -50,4 +50,6 @@ extern typedef_max3003 mMax3003Sensor;
 void vMax30003Init(void);
 void vMax30003ReadData(void);
 
+unsigned int uiGetMax3003ECG();
+unsigned int uiGetMax3003RR();
 #endif /* MAX30003_H_ */

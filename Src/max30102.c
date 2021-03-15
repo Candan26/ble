@@ -256,6 +256,12 @@ void static vsGetAvarageBeat(void) {
 		}
 	}
 }
+
+uint32_t static uisMillis() {
+	tick = HAL_GetTick();
+	return tick;
+}
+
 // Global Function Definitions
 
 void vMax30102Init(void) {
@@ -280,8 +286,19 @@ void vMax30102ReadData(void) {
 	}
 }
 
-uint32_t static uisMillis() {
-	tick = HAL_GetTick();
-	return tick;
+unsigned int uiGetHR() {
+	return mMax30102Sensor.uiHR;
+}
+
+unsigned int uiGetSPO2() {
+	return mMax30102Sensor.uiSPO2;
+}
+
+unsigned int uiGetCumPulse() {
+	return mMax30102Sensor.uiCumulativePulseInterval;
+}
+
+unsigned int uiGetPulseCounter() {
+	return mMax30102Sensor.usPulseCounter;
 }
 

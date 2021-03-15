@@ -131,3 +131,10 @@ void vMax30003ReadData(void) {
 	mMax3003Sensor.ucaDataPacketHeader[17] = 0x00;
 	mMax3003Sensor.ucaDataPacketHeader[18] = 0x0b;
 }
+
+unsigned int uiGetMax3003ECG(){
+	return mMax3003Sensor.lEcgData;
+}
+unsigned int uiGetMax3003RR(){
+	return mMax3003Sensor.uiRR;
+}

@@ -29,13 +29,24 @@ typedef struct {
 /* Exported constants --------------------------------------------------------*/
 /* External variables --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
+
+#define SWITCH_DATA 0x0007
+#define SWITCH_GSR 0x0006
+#define SWITCH_SPO2 0x0005
+#define SWITCH_HR 0x0004
+#define SWITCH_LUX 0x0003
+#define SWITCH_HUM 0x0002
+#define SWITCH_TEMP 0x0001
+#define SWITCH_EGR 0x0000
 /* Exported functions ------------------------------------------------------- */
 void SMART_WATCH_STM_Init(void);
-void SMART_WATCH_STM_App_Notification(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
+void SMART_WATCH_STM_App_Notification_EGR(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_TEMPERATURE(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_HUMIDITY(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_LUX(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_GSR(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
+void SMART_WATCH_STM_App_Notification_HR(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
+void SMART_WATCH_STM_App_Notification_SPO2(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 void SMART_WATCH_STM_App_Notification_Data(SMART_WATCH_STM_App_Notification_evt_t *pNotification);
 tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload);
 #ifdef __cplusplus

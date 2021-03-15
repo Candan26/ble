@@ -152,4 +152,9 @@ extern typedef_max30102 mMax30102Sensor;
 
 void vMax30102Init(void);
 void vMax30102ReadData(void);
+
+unsigned int uiGetHR();
+unsigned int uiGetSPO2();
+unsigned int uiGetCumPulse();
+unsigned int uiGetPulseCounter();
 #endif /* MAX30102_H_ */

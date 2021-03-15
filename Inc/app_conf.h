@@ -156,7 +156,7 @@
  * Note that certain characteristics and relative descriptors are added automatically during device initialization
  * so this parameters should be 9 plus the number of user Attributes
  */
-#define CFG_BLE_NUM_GATT_ATTRIBUTES 68
+#define CFG_BLE_NUM_GATT_ATTRIBUTES 128
 
 /**
  * Maximum supported ATT_MTU size
@@ -457,6 +457,8 @@ typedef enum
   CFG_MY_TASK_NOTIFY_HUMIDITY,
   CFG_MY_TASK_NOTIFY_LUX,
   CFG_MY_TASK_NOTIFY_GSR,
+  CFG_MY_TASK_NOTIFY_HR,
+  CFG_MY_TASK_NOTIFY_SPO2,
   CFG_MY_TASK_NOTIFY_DATA,
 /* USER CODE END CFG_Task_Id_With_HCI_Cmd_t */
     CFG_LAST_TASK_ID_WITH_HCICMD,                                               /**< Shall be LAST in the list */

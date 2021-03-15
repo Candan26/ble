@@ -173,6 +173,7 @@ void initTimer() {
 void initAdc() {
 	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
 	}
+	vSetAdcChannel(ADC_CHANNEL_3);
 }
 
 void initInterrupts() {
@@ -181,8 +182,9 @@ void initInterrupts() {
 }
 
 void systemInit(void) {
+	HAL_NVIC_SetPriority(SysTick_IRQn, 0 ,0);
 	initTimer();
-	//initAdc();
+	initAdc();
 	initInterrupts();
 	vInitsi7021();
 	vMax30102Init();
@@ -271,6 +273,7 @@ void vSetAdcChannel(uint32_t adcChannel){
 	MX_TIM16_Init();
 	/* USER CODE BEGIN 2 */
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+
 	systemInit();
 	/* USER CODE END 2 */
 	APPE_Init();
@@ -638,7 +641,7 @@ static void MX_DMA_Init(void) {
 
 	/* DMA interrupt init */
 	/* DMA1_Channel1_IRQn interrupt configuration */
-	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 4, 0);
 	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
@@ -706,7 +709,7 @@ static void MX_GPIO_Init(void) {
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 	/* EXTI interrupt init*/
-	HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+	HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
 	HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 }

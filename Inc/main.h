@@ -83,6 +83,8 @@ extern typedefBleData bleData;
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -97,8 +99,9 @@ void Error_Handler(void);
 #define AI1_GPIO_Port GPIOC
 #define DISP_VDD_Pin GPIO_PIN_0
 #define DISP_VDD_GPIO_Port GPIOA
-#define LOP_Pin GPIO_PIN_2
-#define LOP_GPIO_Port GPIOA
+#define MAX30003_INTB_Pin GPIO_PIN_2
+#define MAX30003_INTB_GPIO_Port GPIOA
+#define MAX30003_INTB_EXTI_IRQn EXTI2_IRQn
 #define LOM_Pin GPIO_PIN_3
 #define LOM_GPIO_Port GPIOA
 #define BUTTON_SW1_Pin GPIO_PIN_4
@@ -108,7 +111,8 @@ void Error_Handler(void);
 #define LED_GREEN_GPIO_Port GPIOB
 #define LED_BLUE_Pin GPIO_PIN_5
 #define LED_BLUE_GPIO_Port GPIOB
-
+#define MAX30102_INT_Pin GPIO_PIN_11
+#define MAX30102_INT_GPIO_Port GPIOC
 #define SPI1_CS_Pin GPIO_PIN_5
 #define SPI1_CS_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
@@ -118,7 +122,8 @@ void vSetGSRAnalogValue(uint32_t value);
 unsigned char ucGetAd8232AnalogValue();
 unsigned int uiGetAd8232AnalogValue();
 unsigned short usGetAd8232AnalogValue();
-unsigned int uiGetGSRHumanResistance();
+uint32_t uiGetGSRHumanResistance(void);
+extern volatile uint8_t ecgFIFOIntFlag;
 extern I2C_HandleTypeDef hi2c3;
 extern UART_HandleTypeDef huart1;
 extern SPI_HandleTypeDef hspi1;

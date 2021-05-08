@@ -13,7 +13,7 @@
 #include "kalman.h"
 #include "max30003.h"
 #include "max30102.h"
-
+#include "oled.h"
 /* Private typedef -----------------------------------------------------------*/
 typedef union {
 	uint8_t uc[4];
@@ -77,10 +77,10 @@ typedef struct {
 	uint8_t ucUpdate_EGR_Id;
 	uint8_t ucUpdate_Temparature_Id;
 	uint8_t ucUpdate_Humidity_Id;
-	uint8_t ucUpdate_LUX_Id;
+	//uint8_t ucUpdate_LUX_Id;
 	uint8_t ucUpdate_GSR_Id;
 	uint8_t ucUpdate_HR_Id;
-	uint8_t ucUpdate_SPO2_Id;
+	//uint8_t ucUpdate_SPO2_Id;
 	uint8_t ucUpdate_Data_Id;
 } SMART_WATCH_App_Context_t;
 
@@ -91,19 +91,20 @@ typedef struct {
 #define GSR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define HR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define SPO2_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
-#define DATA_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
+#define DATA_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL)*2 /*100ms*/
 
 #define BLE_SWITCH_THRESHOLD 4
 #define OFFSET_DATA_HUMIDTY 0
 #define OFFSET_DATA_TEMP OFFSET_DATA_HUMIDTY+4
 #define OFFSET_DATA_GSR OFFSET_DATA_TEMP+4
-#define OFFSET_DATA_HR OFFSET_DATA_GSR+4
-#define OFFSET_DATA_SPO2 OFFSET_DATA_HR+4
-#define OFFSET_DATA_CUM_PULSE OFFSET_DATA_SPO2+4
-#define OFFSET_DATA_PULSE_COUNTER OFFSET_DATA_CUM_PULSE+4
-#define OFFSET_DATA_ECG OFFSET_DATA_PULSE_COUNTER+4
-#define OFFSET_DATA_RR OFFSET_DATA_ECG+4
-#define OFFSET_DATA_LUX OFFSET_DATA_RR+4
+#define OFFSET_DATA_HR OFFSET_DATA_GSR+2
+#define OFFSET_DATA_SPO2 OFFSET_DATA_HR+1
+#define OFFSET_DATA_IRED OFFSET_DATA_SPO2+1
+#define OFFSET_DATA_RED OFFSET_DATA_IRED+4
+#define OFFSET_DATA_RR OFFSET_DATA_RED+4
+#define OFFSET_DATA_ECG OFFSET_DATA_RR+4
+
+//#define OFFSET_DATA_LUX OFFSET_DATA_RR+4
 
 #define OFFSET_HR 0
 #define OFFSET_SPO2 OFFSET_HR+4
@@ -129,10 +130,10 @@ static void SMART_WATCH_Send_Notification_Task(void);
 static void SMART_WATCH_EGR_Timer_Callback(void);
 static void SMART_WATCH_Temperature_Timer_Callback(void);
 static void SMART_WATCH_Humidity_Timer_Callback(void);
-static void SMART_WATCH_LUX_Timer_Callback(void);
+//static void SMART_WATCH_LUX_Timer_Callback(void);
 static void SMART_WATCH_GSR_Timer_Callback(void);
 static void SMART_WATCH_HR_Timer_Callback(void);
-static void SMART_WATCH_SPO2_Timer_Callback(void);
+//static void SMART_WATCH_SPO2_Timer_Callback(void);
 static void SMART_WATCH_DATA_Timer_Callback(void);
 /* Public functions ----------------------------------------------------------*/
 void SMART_WATCH_STM_App_Notification_EGR(SMART_WATCH_STM_App_Notification_evt_t *pNotification) {
@@ -193,24 +194,25 @@ void SMART_WATCH_STM_App_Notification_HUMIDITY(SMART_WATCH_STM_App_Notification_
 	return;
 }
 
+/*
 void SMART_WATCH_STM_App_Notification_LUX(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
 	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
 		SMART_WATCH_App_Context.ucNotificationStatus = 1;
-		/* Start the timer used to update the characteristic */
+
 		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_LUX_Id,LUX_CHANGE_PERIOD );//LUX_CHANGE_PERIOD
-		break; /* NOTIFY_ENABLED_EVT */
+		break;
 	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
  		SMART_WATCH_App_Context.ucNotificationStatus = 0;
-		/* Start the timer used to update the characteristic */
+
 		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_LUX_Id);
-		break; /* NOTIFY_DISABLED_EVT */
+		break;
 	default:
-		break; /* DEFAULT */
+		break;
 	}
 	return;
 }
-
+*/
 void SMART_WATCH_STM_App_Notification_HR(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
 	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
@@ -228,25 +230,25 @@ void SMART_WATCH_STM_App_Notification_HR(SMART_WATCH_STM_App_Notification_evt_t 
 	}
 	return;
 }
-
+/*
 void SMART_WATCH_STM_App_Notification_SPO2(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
 	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
 		SMART_WATCH_App_Context.ucNotificationStatus = 1;
-		/* Start the timer used to update the characteristic */
+
 		HW_TS_Start(SMART_WATCH_App_Context.ucUpdate_SPO2_Id, SPO2_CHANGE_PERIOD);//SPO2_CHANGE_PERIOD
-		break; /* NOTIFY_ENABLED_EVT */
+		break;
 	case SMART_WATCH_STM_NOTIFY_DISABLED_EVT:
  		SMART_WATCH_App_Context.ucNotificationStatus = 0;
-		/* Start the timer used to update the characteristic */
+
 		HW_TS_Stop(SMART_WATCH_App_Context.ucUpdate_SPO2_Id);
-		break; /* NOTIFY_DISABLED_EVT */
+		break;
 	default:
-		break; /* DEFAULT */
+		break;
 	}
 	return;
 }
-
+*/
 void SMART_WATCH_STM_App_Notification_GSR(SMART_WATCH_STM_App_Notification_evt_t *pNotification){
 	switch (pNotification->SMART_WATCH_Evt_Opcode) {
 	case SMART_WATCH_STM_NOTIFY_ENABLED_EVT:
@@ -360,33 +362,33 @@ static void SMART_WATCH_Humidity_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
 	int i =0;
-	static unsigned char ucPrintCounter=0;
+	static uint8_t sucPrintCounter=0;
 
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_HUMIDITY, CFG_SCH_PRIO_0);//CFG_SCH_PRIO_0
 	tmpVal.f = mSi7021Sensor.fHumidty;
-	ucPrintCounter++;
-	if(ucPrintCounter==5){
-		LCD_BLE_HTS_PrintHumidity(tmpVal.f);
-		ucPrintCounter=0;
+	if(sucPrintCounter>=3){
+		vOledBlePrintHumidity(tmpVal.f);
+		sucPrintCounter=0;
 	}
+	sucPrintCounter++;
 	for(i=0;i<4;i++)
 		value[3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(SWITCH_HUM, (uint8_t *) &value);
 }
 
 static void SMART_WATCH_Temperature_Timer_Callback(void){
-	static unsigned char ucPrintCounter=0;
+	static uint8_t sucPrintCounter=0;
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
 	int i =0;
 
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_TEMPERATURE, CFG_SCH_PRIO_0);
 	tmpVal.f = mSi7021Sensor.fTemperature;
-	ucPrintCounter++;
-	if(ucPrintCounter==5){
-		LCD_BLE_HTS_PrintTemperature(mSi7021Sensor.fTemperature);
-		ucPrintCounter=0;
+	if(sucPrintCounter>=3){
+		vOledBlePrintTemperature(mSi7021Sensor.fTemperature);
+		sucPrintCounter=0;
 	}
+	sucPrintCounter++;
 	for(i=0;i<4;i++)
 		value[3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(SWITCH_TEMP, (uint8_t *) &value);
@@ -396,11 +398,11 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 	static unsigned char value[8];
 	unionTypeDef tmpVal;
 	int i=0;
-
+	static uint8_t sucPrintCounter=0;
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_EGR, CFG_SCH_PRIO_0);
 
 	tmpVal.ui = uiGetMax3003ECG();
-	LCD_BLE_CS_PrintBPM(tmpVal.uc[0]); // TODO correct this line
+	sucPrintCounter++;
 	for(i=0;i<4;i++)
 		value[OFFSET_EGR_ECG + 3-i] = tmpVal.uc[i];
 
@@ -408,9 +410,14 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 	for(i=0;i<4;i++)
 		value[OFFSET_EGR_RR + 3-i] = tmpVal.uc[i];
 
+	if(sucPrintCounter>=2){
+		vOledBlePrintMax30003(uiGetMax3003ECG(),uiGetMax3003HR(), uiGetMax3003RR()); // TODO correct this line
+		sucPrintCounter=0;
+	}
+
 	SMART_WATCH_STM_App_Update_Char(SWITCH_EGR, (uint8_t *) &value);
 }
-
+/*
 static void SMART_WATCH_LUX_Timer_Callback(void) {
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
@@ -418,20 +425,21 @@ static void SMART_WATCH_LUX_Timer_Callback(void) {
 
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_LUX, CFG_SCH_PRIO_0);
 	tmpVal.ui = mTsl2561Sensor.uiLuxValue;
-	LCD_BLE_HTS_LUX(tmpVal.ui);
+	vOledBlePrintLux(tmpVal.ui);
 	for(i=0;i<4;i++)
 		value[3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(SWITCH_LUX, (uint8_t *) &value);
 }
-
+*/
 static void SMART_WATCH_GSR_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
 	int i =0;
+
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_GSR, CFG_SCH_PRIO_0);
 	tmpVal.ui = uiGetGSRHumanResistance();
-	tmpVal.ui =(unsigned int)dCalculateKalmanDataSet((double)tmpVal.ui);
-	LCD_BLE_HTS_GSR((float)tmpVal.ui);
+	//tmpVal.ui =(unsigned int)dCalculateKalmanDataSet((double)tmpVal.ui);
+	vOledBlePrintGSR((float)tmpVal.ui);
 	for(i=0;i<4;i++)
 		value[3-i] = tmpVal.uc[i];
 
@@ -443,27 +451,31 @@ static void SMART_WATCH_HR_Timer_Callback(void){
 	unionTypeDef tmpVal;
 	int i =0;
 	SCH_SetTask(1 << CFG_MY_TASK_NOTIFY_HR, CFG_SCH_PRIO_0);
+	static uint8_t sucPrintCounter=0;
 
-	//TODO add update oled screen
-	//LCD_BLE_HTS_HR((float)tmpVal.ui);
-	LCD_Print("HR SPO2", "SELECTED");
-	tmpVal.ui=uiGetHR();
+	if(sucPrintCounter>=2){
+		vOledBlePrintMax30102(ucGetMax30102HR(), ucGetMax30102SPO2(), usGetMax30102Diff());
+		sucPrintCounter=0;
+	}
+	sucPrintCounter++;
+
+	tmpVal.ui=ucGetMax30102HR();
 	for(i=0;i<4;i++)
 		value[OFFSET_HR + 3-i] = tmpVal.uc[i];
 
-	tmpVal.ui=uiGetSPO2();
+	tmpVal.ui=ucGetMax30102SPO2();
 	for(i=0;i<4;i++)
 		value[OFFSET_SPO2 + 3-i] = tmpVal.uc[i];
 
-	tmpVal.ui=uiGetCumPulse();
+	tmpVal.ui=usGetMax30102Diff();
 	for(i=0;i<4;i++)
 		value[OFFSET_CUM_PULSE + 3-i] = tmpVal.uc[i];
-	tmpVal.ui=uiGetPulseCounter();
+	tmpVal.ui=uiGetMax30102PulseCounter();
 	for(i=0;i<4;i++)
 		value[OFFSET_PULSE_COUNTER + 3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(SWITCH_HR, (uint8_t *) &value);
 }
-
+/*
 static void SMART_WATCH_SPO2_Timer_Callback(void){
 	static unsigned char value[16];
 	unionTypeDef tmpVal;
@@ -473,10 +485,10 @@ static void SMART_WATCH_SPO2_Timer_Callback(void){
 	//TODO add update oled screen
 	//LCD_BLE_HTS_SPO2((float)tmpVal.ui);
 	LCD_Print("SPO2", "SELECTED");
-	tmpVal.ui=uiGetSPO2();
+	tmpVal.ui=ucGetSPO2();
 	for(i=0;i<4;i++)
 		value[OFFSET_SPO2 + 3-i] = tmpVal.uc[i];
-	tmpVal.ui=uiGetCumPulse();
+	tmpVal.ui=usGetDiff();
 	for(i=0;i<4;i++)
 		value[OFFSET_CUM_PULSE + 3-i] = tmpVal.uc[i];
 	tmpVal.ui=uiGetPulseCounter();
@@ -484,9 +496,10 @@ static void SMART_WATCH_SPO2_Timer_Callback(void){
 		value[OFFSET_PULSE_COUNTER + 3-i] = tmpVal.uc[i];
 	SMART_WATCH_STM_App_Update_Char(SWITCH_SPO2, (uint8_t *) &value);
 }
+*/
 
 static void SMART_WATCH_DATA_Timer_Callback(void){
-	static unsigned char value[40];
+	static unsigned char value[60];
 	unionTypeDef tmpVal;
 	int i =0;
 	static unsigned char ucPrintCounter=0;
@@ -502,47 +515,57 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_TEMP+3-i] = tmpVal.uc[i];
 	//get gsr data
-	tmpVal.ui=uiGetGSRHumanResistance();
-	tmpVal.ui =(unsigned int)dCalculateKalmanDataSet((double)tmpVal.ui);
-	for(i=0;i<4;i++)
-		value[OFFSET_DATA_GSR+3-i] = tmpVal.uc[i];
+	tmpVal.ui = uiGetGSRHumanResistance()%0xFFFF;
+	//tmpVal.ui =(unsigned int)dCalculateKalmanDataSet((double)tmpVal.ui);
+	for(i=0;i<2;i++)
+		value[OFFSET_DATA_GSR+1-i] = tmpVal.uc[i];
 	//get max30102 HR data
-	tmpVal.ui = uiGetHR();
-	for(i=0;i<4;i++)
-		value[OFFSET_DATA_HR+3-i] = tmpVal.uc[i];
+	tmpVal.ui = ucGetMax30102HR()%0xFF;
+	for(i=0;i<1;i++)
+		value[OFFSET_DATA_HR-i] = tmpVal.uc[i];
 	//get max30102 SPO2 data
-	tmpVal.ui = uiGetSPO2();
+	tmpVal.ui = ucGetMax30102SPO2()%0xFF;
+	for(i=0;i<1;i++)
+		value[OFFSET_DATA_SPO2-i] = tmpVal.uc[i];
+
+	//get max30102 IRed data
+	tmpVal.ui = uiGetMax30102IRed();
 	for(i=0;i<4;i++)
-		value[OFFSET_DATA_SPO2+3-i] = tmpVal.uc[i];
-	//get max30102 Cumulative Pulse data
-	tmpVal.ui = uiGetCumPulse();
+		value[OFFSET_DATA_IRED+3-i] = tmpVal.uc[i];
+
+	//get max30102 IRed data
+	tmpVal.ui = uiGetMax30102Red();
 	for(i=0;i<4;i++)
-		value[OFFSET_DATA_CUM_PULSE+3-i] = tmpVal.uc[i];
-	//get max30102 Pulse Counter data
-	tmpVal.ui = uiGetPulseCounter();
-	for(i=0;i<4;i++)
-		value[OFFSET_DATA_PULSE_COUNTER+3-i] = tmpVal.uc[i];
-	//get max3003 ECG data
-	tmpVal.ui = uiGetMax3003ECG();
-	for(i=0;i<4;i++)
-		value[OFFSET_DATA_ECG+3-i] = tmpVal.uc[i];
+		value[OFFSET_DATA_RED+3-i] = tmpVal.uc[i];
+
 	//get max3003 RR data
 	tmpVal.ui = uiGetMax3003RR();
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_RR+3-i] = tmpVal.uc[i];
+
+	//get max3003 ECG data
+	int j=0;
+	for(i=0;i<15;i++){
+		tmpVal.ui =  mMax3003Sensor.usaDataPacketHeader[i]%0xFFFF;
+		for(j=0;j<2;j++)
+			value[(OFFSET_DATA_ECG + i*2)+1-j] = tmpVal.uc[j];
+	}
+
+
 	//get lux data
+	/*
 	tmpVal.ui = mTsl2561Sensor.uiLuxValue;
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_LUX+3-i] = tmpVal.uc[i];
+		*/
 	// print lcd
 	ucPrintCounter++;
-	if(ucPrintCounter==5){
-		LCD_BLE_HTS_Data();
+	if(ucPrintCounter>=5){
+		vOledBlePrintData();
 		ucPrintCounter=0;
 	}
 	SMART_WATCH_STM_App_Update_Char(SWITCH_DATA, (uint8_t *) &value);
 }
-
 
 static void SMART_WATCH_context_Init(void) {
 	APP_DBG_MSG("Initializing ble context properties.\n");

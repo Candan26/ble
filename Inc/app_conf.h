@@ -141,13 +141,13 @@
  * Maximum number of simultaneous connections that the device will support.
  * Valid values are from 1 to 8
  */
-#define CFG_BLE_NUM_LINK            8
+#define CFG_BLE_NUM_LINK            2
 
 /**
  * Maximum number of Services that can be stored in the GATT database.
  * Note that the GAP and GATT services are automatically added so this parameter should be 2 plus the number of user services
  */
-#define CFG_BLE_NUM_GATT_SERVICES   8
+#define CFG_BLE_NUM_GATT_SERVICES   4
 
 /**
  * Maximum number of Attributes
@@ -161,7 +161,7 @@
 /**
  * Maximum supported ATT_MTU size
  */
-#define CFG_BLE_MAX_ATT_MTU             (156)
+#define CFG_BLE_MAX_ATT_MTU             (251)
 
 /**
  * Size of the storage area for Attribute values
@@ -455,10 +455,10 @@ typedef enum
   CFG_MY_TASK_NOTIFY_EGR,
   CFG_MY_TASK_NOTIFY_TEMPERATURE,
   CFG_MY_TASK_NOTIFY_HUMIDITY,
-  CFG_MY_TASK_NOTIFY_LUX,
+  //CFG_MY_TASK_NOTIFY_LUX,
   CFG_MY_TASK_NOTIFY_GSR,
   CFG_MY_TASK_NOTIFY_HR,
-  CFG_MY_TASK_NOTIFY_SPO2,
+  //CFG_MY_TASK_NOTIFY_SPO2,
   CFG_MY_TASK_NOTIFY_DATA,
 /* USER CODE END CFG_Task_Id_With_HCI_Cmd_t */
     CFG_LAST_TASK_ID_WITH_HCICMD,                                               /**< Shall be LAST in the list */

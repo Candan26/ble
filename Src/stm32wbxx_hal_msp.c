@@ -28,7 +28,7 @@ extern DMA_HandleTypeDef hdma_usart1_tx;
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-
+extern DMA_HandleTypeDef hdma_adc1;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -113,6 +113,24 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(AI0_GPIO_Port, &GPIO_InitStruct);
+
+    /* ADC1 DMA Init */
+    /* ADC1 Init */
+    hdma_adc1.Instance = DMA1_Channel1;
+    hdma_adc1.Init.Request = DMA_REQUEST_ADC1;
+    hdma_adc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_adc1.Init.Mode = DMA_CIRCULAR;
+    hdma_adc1.Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(&hdma_adc1) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc1);
 
     /* ADC1 interrupt Init */
     HAL_NVIC_SetPriority(ADC1_IRQn, 6, 0);
@@ -358,9 +376,47 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 
   /* USER CODE END TIM16_MspInit 1 */
   }
+  else if(htim_base->Instance==TIM17)
+  {
+  /* USER CODE BEGIN TIM17_MspInit 0 */
+
+  /* USER CODE END TIM17_MspInit 0 */
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM17_CLK_ENABLE();
+    /* TIM17 interrupt Init */
+    HAL_NVIC_SetPriority(TIM1_TRG_COM_TIM17_IRQn, 10, 0);
+    HAL_NVIC_EnableIRQ(TIM1_TRG_COM_TIM17_IRQn);
+  /* USER CODE BEGIN TIM17_MspInit 1 */
+
+  /* USER CODE END TIM17_MspInit 1 */
+  }
+}
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(htim->Instance==TIM17)
+  {
+  /* USER CODE BEGIN TIM17_MspPostInit 0 */
+
+  /* USER CODE END TIM17_MspPostInit 0 */
+
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    /**TIM17 GPIO Configuration
+    PB9     ------> TIM17_CH1
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF14_TIM17;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN TIM17_MspPostInit 1 */
+
+  /* USER CODE END TIM17_MspPostInit 1 */
+  }
 
 }
-
 /**
 * @brief TIM_Base MSP De-Initialization
 * This function freeze the hardware resources used in this example

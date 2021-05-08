@@ -40,6 +40,7 @@
 /* USER CODE BEGIN Includes */
 #include "hal_lcd.h"
 #include "smart_watch_app.h"
+#include "oled.h"
 /* USER CODE END Includes */
 static int siCounterTogleLed=0;
 /* Private typedef -----------------------------------------------------------*/
@@ -381,7 +382,8 @@ void APP_BLE_Init( void )
 {
 /* USER CODE BEGIN APP_BLE_Init_1 */
   /* Initialize the LCD */
-  LCD_Init();
+  //LCD_Init();
+
   /* Display the application icon */
   LCD_BLE_PrintLogo();
   /* Display the local device name */
@@ -521,6 +523,7 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
         BleApplicationContext.BleApplicationContext_legacy.connectionHandle = 0;
         BleApplicationContext.Device_Connection_Status = APP_BLE_IDLE;
         //TODO add screen process
+        vOledBleClearScreen();
         LCD_BLE_PrintStatus((char *)"ADVERTISING");
 #if(CFG_DEBUG_APP_TRACE != 0)
         APP_DBG_MSG("\r\n\r** DISCONNECTION EVENT WITH CLIENT \n");

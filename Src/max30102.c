@@ -6,47 +6,43 @@
  */
 
 #include "max30102.h"
-#include "heartRate.h"
+
 
 //local function prototypes
 
 #define max1002I2c hi2c3
-#define max30102uart huart1
-#define PULSE_COUNTER_UP_LIMIT 300
 
-typedef_max30102 mMax30102Sensor;
+volatile typedef_max30102 mMax30102Sensor;
 // local variables
-int tick = 0;
-long lastBeat = 0; //Time at which the last beat occurred
-long delta = 0;
+#define FILTER_LEVEL 8 /*????*/
+#define BUFF_SIZE 50
+SAMPLE sampleBuff[BUFF_SIZE];
 
+uint16_t redAC = 0;
+uint32_t redDC = 0;
+uint16_t iRedAC = 0;
+uint32_t iRedDC = 0;
+
+uint8_t unreadSampleCount = 0;
+SAMPLE sampleBuffTemp[5];
+
+uint8_t wr = 0, rd = 0;
+uint8_t dataInit =0;
 // local functions
-void static vsSetLEDs(pulseWidth pw, ledCurrent red, ledCurrent ir); // Sets the LED state
-void static vsSetSPO2(sampleRate sr, high_resolution hi_res); // Setup the SPO2 sensor, disabled by default
-void static vsGetAvarageBeat(); // get avarage beat based on hr values;
-void static vsReadSensor(void);       // Updates the values
-void static vsShutdown(void);   // Instructs device to power-save
-void static vsReset(void);      // Resets the device
-void static vsStartup(void);    // Leaves power-save
-char static csGetRevID(void);   // Gets revision ID
-char static csGetPartID(void);  // Gets part ID
-int static isGetNumSamp(void);       // Get number of samples
-uint32_t static uisMillis();
-// Longest pulseWidth , Highest current, 2nd lowest sampleRate pw = pw411
-void static vsBegin(pulseWidth pw, ledCurrent ir, sampleRate sr);
-
-void static vsInit(pulseWidth pw, sampleRate sr, high_resolution hi_res,
-		ledCurrent red, ledCurrent ir);
-void static vsSetTemp(void);
-int static isReadTemp(void);
-void static vsSetSPO2mode(void);
-void static vsSetInterruptSPO2(void);
-void static vsPrintRegisters(void); // Dumps contents of registers for debug
+uint8_t max30102_getStatus(void);
+HAL_StatusTypeDef stI2c;
 
 void i2c_read(uint8_t address, uint8_t config_data, uint8_t *data,
 		uint32_t size) {
-	HAL_I2C_Master_Transmit(&max1002I2c, address, &config_data, 1, 300);
-	HAL_I2C_Master_Receive(&max1002I2c, address, data, size, 300);
+	if( HAL_I2C_GetState(&max1002I2c) != HAL_I2C_STATE_BUSY){
+		HAL_I2C_Master_Transmit(&max1002I2c, MAX30102_ADDR_WRITE, &config_data, 1, 300);
+		stI2c = HAL_I2C_Master_Receive(&max1002I2c, address, data, size, 300);
+	}
+	if(stI2c == HAL_ERROR){
+		HAL_I2C_DeInit(&max1002I2c);
+		HAL_I2C_Init(&max1002I2c);
+	}
+
 }
 
 void i2c_write(uint8_t address, uint8_t config_data, uint8_t *data,
@@ -54,251 +50,229 @@ void i2c_write(uint8_t address, uint8_t config_data, uint8_t *data,
 	uint8_t ucaBuffer[2];
 	ucaBuffer[0] = config_data;
 	ucaBuffer[1] = data[0];
-	HAL_I2C_Master_Transmit(&max1002I2c, address, ucaBuffer, 2, 300);
-}
-// Local Function Definitions
+	if( HAL_I2C_GetState(&max1002I2c) != HAL_I2C_STATE_BUSY){
+		HAL_I2C_Master_Transmit(&max1002I2c, address, ucaBuffer, 2, 300);
+	}
 
-// Sets the LED state
-void static vsSetLEDs(pulseWidth pw, ledCurrent red, ledCurrent ir) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_SPO2_CONFIG, data_read, 1);
-	data_read[0] = data_read[0] & 0xFD;                      // Set LED_PW to 01
-	data_write[0] = data_read[0] | pw;
-	i2c_write(MAX30102_ADDRESS, MAX30102_SPO2_CONFIG, data_write, 1); // Mask LED_PW
-	data_write[0] = (red);
-	i2c_write(MAX30102_ADDRESS, MAX30102_LED_CONFIG_1, data_write, 1); // write LED1 configs
-	data_write[0] = (ir);
-	i2c_write(MAX30102_ADDRESS, MAX30102_LED_CONFIG_2, data_write, 1); // write LED2 configs
 }
 
-void static vsSetSPO2(sampleRate sr, high_resolution hi_res) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_SPO2_CONFIG, data_read, 1);
-	data_read[0] = data_read[0] & 0x85; // Set ADC_rge to 00, SPO2_SR to 001 = sr100 and LEDpw to 01 = 118
-	data_write[0] = data_read[0] | (sr << 2) | (hi_res << 6);
-	i2c_write(MAX30102_ADDRESS, MAX30102_SPO2_CONFIG, data_write, 1); // Mask SPO2_SR
-	i2c_read(MAX30102_ADDRESS, MAX30102_CONFIG, data_read, 1);
-	data_write[0] = data_read[0] & 0xF8; // Set Mode to 000
-	i2c_write(MAX30102_ADDRESS, MAX30102_CONFIG, data_write, 1);    // Mask MODE
+void filter(SAMPLE *s) {
+	uint8_t i;
+	uint32_t red = 0;
+	uint32_t ired = 0;
+	for (i = 0; i < FILTER_LEVEL - 1; i++) {
+		red += sampleBuff[i].red;
+		ired += sampleBuff[i].iRed;
+	}
+	s->red = (red + s->red) / FILTER_LEVEL;
+	s->iRed = (ired + s->iRed) / FILTER_LEVEL;
 }
 
-void static vsSetInterruptSPO2(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_INT_ENABLE, data_read, 1);
-	data_write[0] = data_read[0] & 0x00; // Set Interrupt enable for SPO2 | 0x10   // New: disable prox! & ~0x10
-	i2c_write(MAX30102_ADDRESS, MAX30102_INT_ENABLE, data_write, 1); // Mask ENB_SPO2_RDY
+void buffInsert(SAMPLE s) {
+	uint8_t i;
+	for (i = BUFF_SIZE - 1; i > 0; i--) {
+		sampleBuff[i].red = sampleBuff[i - 1].red;
+		sampleBuff[i].iRed = sampleBuff[i - 1].iRed;
+	}
+	sampleBuff[0].red = s.red;
+	sampleBuff[0].iRed = s.iRed;
 }
 
-int static isGetNumSamp(void) {
-	uint8_t data_read[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_FIFO_W_POINTER, data_read, 1);
-	char wrPtr = data_read[0];
-	i2c_read(MAX30102_ADDRESS, MAX30102_FIFO_R_POINTER, data_read, 1);
-	char rdPtr = data_read[0];
-	return ((int) wrPtr - (int) rdPtr);                          // New counting
+void calAcDc(uint16_t *rac, uint32_t *rdc, uint16_t *iac, uint32_t *idc) {
+	uint32_t rMax = sampleBuff[0].red;
+	uint32_t rMin = sampleBuff[0].red;
+	uint32_t iMax = sampleBuff[0].iRed;
+	uint32_t iMin = sampleBuff[0].iRed;
+
+	uint8_t i;
+	for (i = 0; i < BUFF_SIZE; i++) {
+		if (sampleBuff[i].red > rMax)
+			rMax = sampleBuff[i].red;
+		if (sampleBuff[i].red < rMin)
+			rMin = sampleBuff[i].red;
+		if (sampleBuff[i].iRed > iMax)
+			iMax = sampleBuff[i].iRed;
+		if (sampleBuff[i].iRed < iMin)
+			iMin = sampleBuff[i].iRed;
+	}
+	*rac = rMax - rMin;
+	*rdc = (rMax + rMin) / 2;
+	*iac = iMax - iMin;
+	*idc = (iMax + iMin) / 2;
 }
 
-void static vsSetTemp(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_CONFIG, data_read, 1);
-	data_write[0] = data_read[0] | 0x01;    // Enable temperature
-	i2c_write(MAX30102_ADDRESS, MAX30102_TEMP_CONFIG, data_write, 1); // Mask MODE
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_CONFIG, data_read, 1);
-}
+void max30102_getFIFO(SAMPLE *data, uint8_t sampleCount) {
+	uint8_t dataTemp[5 * 6];
+	if (sampleCount > 5)
+		sampleCount = 5;
+	i2c_read(MAX30102_ADDR_READ,RES_FIFO_DATA_REGISTER,dataTemp, 6 * sampleCount);
 
-void static vsSetSPO2mode(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_CONFIG, data_read, 1);
-	data_write[0] = data_read[0] | 0x03;    // Set SPO2 Mode
-	i2c_write(MAX30102_ADDRESS, MAX30102_CONFIG, data_write, 1);
-}
-
-int static isReadTemp(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t temp_int, temp_fract;
-	int32_t temp_measured;
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_INTEGER, data_read, 1);
-	temp_int = data_read[0];
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_FRACTION, data_read, 1);
-	temp_fract = data_read[0] & 0x0F;
-	temp_measured = ((int) temp_int) + (((int) temp_fract) >> 4);
-	return temp_measured;
-}
-
-void static vsReadSensor(void) {
-	uint8_t data_read[6] = { 0 };
-	mMax30102Sensor.uiHR = 0;
-	mMax30102Sensor.uiSPO2 = 0;
-	i2c_read(MAX30102_ADDRESS, MAX30102_FIFO_DATA_REG, data_read, 6); // Read six times from the FIFO
-	mMax30102Sensor.uiHR = (data_read[0] << 16) | (data_read[1] << 8)
-			| data_read[2];         // Combine values to get the actual number
-	mMax30102Sensor.uiHR = mMax30102Sensor.uiHR >> 2;
-	mMax30102Sensor.uiSPO2 = (data_read[3] << 16) | (data_read[4] << 8)
-			| data_read[5];       // Combine values to get the actual number
-	mMax30102Sensor.uiSPO2 = mMax30102Sensor.uiSPO2 >> 2;
-}
-
-void static vsShutdown(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_CONFIG, data_read, 1); // Get the current register
-	data_write[0] = data_read[0] | 0x80;
-	i2c_write(MAX30102_ADDRESS, MAX30102_CONFIG, data_write, 1); // mask the SHDN bit
-}
-
-void static vsReset(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_CONFIG, data_read, 1); // Get the current register
-	data_write[0] = data_read[0] | 0x40;
-	i2c_write(MAX30102_ADDRESS, MAX30102_CONFIG, data_write, 1); // mask the RESET bit
-}
-
-void static vsStartup(void) {
-	uint8_t data_read[1] = { 0 };
-	uint8_t data_write[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_CONFIG, data_read, 1); // Get the current register
-	data_write[0] = data_read[0] & 0x7F;
-	i2c_write(MAX30102_ADDRESS, MAX30102_CONFIG, data_write, 1); // mask the SHDN bit
-}
-
-char static csGetRevID(void) {
-	uint8_t data_read[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_REVISION_ID, data_read, 1);
-	return data_read[0];
-}
-
-char static csGetPartID(void) {
-	uint8_t data_read[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_PART_ID, data_read, 1);
-	return data_read[0];
-}
-// pw = pw411 ir = i50 sr = sr100
-void static vsBegin(pulseWidth pw, ledCurrent ir, sampleRate sr) {
-	uint8_t data_write[1] = { 0 };
-	data_write[0] = 0x02;
-	i2c_write(MAX30102_ADDRESS, MAX30102_CONFIG, data_write, 1); // Heart rate only
-	data_write[0] = ir;
-	i2c_write(MAX30102_ADDRESS, MAX30102_LED_CONFIG_1, data_write, 1);
-	data_write[0] = ((sr << 2) | pw);
-	i2c_write(MAX30102_ADDRESS, MAX30102_SPO2_CONFIG, data_write, 1);
-}
-
-void static vsInit(pulseWidth pw, sampleRate sr, high_resolution hi_res,
-		ledCurrent red, ledCurrent ir) {
-	uint8_t data_write[1] = { 0 };
-	vsSetLEDs(pw, red, ir);
-	vsSetSPO2(sr, hi_res);
-	data_write[0] = 0x10;
-	i2c_write(MAX30102_ADDRESS, MAX30102_FIFO_CONFIG, data_write, 1);
-}
-
-void static vsPrintRegisters(void) {
-	uint8_t data_read[1] = { 0 };
-	i2c_read(MAX30102_ADDRESS, MAX30102_INT_STATUS, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[INT_STATUS] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_INT_ENABLE, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[INT_ENABLE] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_FIFO_W_POINTER, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[FIFO_W_POINTER] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_OVR_COUNTER, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[OVR_COUNTER] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_FIFO_R_POINTER, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[FIFO_R_POINTER] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_FIFO_DATA_REG, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[FIFO_DATA_REG] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_CONFIG, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[CONFIG] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_SPO2_CONFIG, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[SPO2_CONFIG] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_LED_CONFIG_2, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[LED_CONFIG] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_INTEGER, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[TEMP_INTEGER] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_FRACTION, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[TEMP_FRACTION] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_TEMP_CONFIG, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[TEMP_CONFIG] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_REVISION_ID, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[REVISION_ID] = data_read[0];
-
-	i2c_read(MAX30102_ADDRESS, MAX30102_PART_ID, data_read, 1);
-	mMax30102Sensor.ucaPrintRegister[PART_ID] = data_read[0];
-}
-
-void static vsGetAvarageBeat(void) {
-	if (ucCheckForBeat(mMax30102Sensor.uiHR) == TRUE) {
-		delta = uisMillis() - lastBeat;
-		lastBeat = uisMillis();
-		mMax30102Sensor.uiCumulativePulseInterval =
-				mMax30102Sensor.uiCumulativePulseInterval + delta;
-		mMax30102Sensor.usPulseCounter++;
-		if (mMax30102Sensor.usPulseCounter >= PULSE_COUNTER_UP_LIMIT) {
-			mMax30102Sensor.usPulseCounter = 0;
-			mMax30102Sensor.uiCumulativePulseInterval = 0;
-		}
+	uint8_t i;
+	for (i = 0; i < sampleCount; i++) {
+		data[i].red = (((uint32_t) dataTemp[i * 6]) << 16
+				| ((uint32_t) dataTemp[i * 6 + 1]) << 8 | dataTemp[i * 6 + 2])
+				& 0x3ffff;
+		data[i].iRed = (((uint32_t) dataTemp[i * 6 + 3]) << 16
+				| ((uint32_t) dataTemp[i * 6 + 4]) << 8 | dataTemp[i * 6 + 5])
+				& 0x3ffff;
 	}
 }
 
-uint32_t static uisMillis() {
-	tick = HAL_GetTick();
-	return tick;
+uint8_t max30102_getStatus(){
+    uint8_t data = 0, dataTemp = 0;
+		i2c_read(MAX30102_ADDR_READ,RES_INTERRUPT_STATUS_1,&dataTemp, 1);
+    //HAL_I2C_Mem_Read(&max1002I2c, MAX30102_ADDR_READ, RES_INTERRUPT_STATUS_1, I2C_MEMADD_SIZE_8BIT, &dataTemp, 1, 10);
+    data = dataTemp;
+    i2c_read(MAX30102_ADDR_READ,RES_INTERRUPT_STATUS_2,&dataTemp, 1);
+		//HAL_I2C_Mem_Read(&max1002I2c, MAX30102_ADDR_READ, RES_INTERRUPT_STATUS_2, I2C_MEMADD_SIZE_8BIT, &dataTemp, 1, 10);
+    return data | dataTemp;
+}
+
+uint8_t max30102_getUnreadSampleCount() {
+	i2c_read(MAX30102_ADDR_READ,RES_FIFO_WRITE_POINTER,&wr,1);
+	i2c_read(MAX30102_ADDR_READ,RES_FIFO_READ_POINTER,&rd,1);
+	if ((wr - rd) < 0)
+		return (wr - rd) + 32;
+	else
+		return (wr - rd);
 }
 
 // Global Function Definitions
-
+uint8_t data = 0;
 void vMax30102Init(void) {
-	vsInit(pw411, sr100, low, i34, i34);
-	vsBegin(pw411, i34, sr100);
-	vsPrintRegisters();
-	vsStartup();
-	mMax30102Sensor.cPartId = csGetPartID();
-	mMax30102Sensor.cRevId = csGetRevID();
-	mMax30102Sensor.iTemp = isReadTemp();
-	mMax30102Sensor.iNumOfSample = isGetNumSamp();
+	  /*reset*/
+	    data = 0x40;
+			i2c_write(MAX30102_ADDR_WRITE,RES_MODE_CONFIGURATION,&data,1);
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    /*?????*/
+		/*
+		do
+	    {
+	        i2c_read(MAX30102_ADDR_READ, RES_MODE_CONFIGURATION, &data, 1);
+					i2c_read(MAX30102_ADDR_WRITE, RES_MODE_CONFIGURATION, &data, 1);
+	    } while (data & 0x40);
+	    */
+	    data = 0x40;
+			i2c_write(MAX30102_ADDR_WRITE,RES_INTERRUPT_ENABLE_1,&data,1); //0x02
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_INTERRUPT_ENABLE_1, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    data = 0x63;
+			i2c_write(MAX30102_ADDR_WRITE,RES_SPO2_CONFIGURATION,&data,1);	//0x0a
+			//HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_SPO2_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    /*????*/
+	    data = 0x47;
+			i2c_write(MAX30102_ADDR_WRITE,RES_LED_PLUSE_AMPLITUDE_1,&data,1);	//0x0c
+			i2c_write(MAX30102_ADDR_WRITE,RES_LED_PLUSE_AMPLITUDE_2,&data,1);	//0x0d
+			i2c_write(MAX30102_ADDR_WRITE,RES_PROXIMITY_MODE_LED_PLUSE_AMPLITUDE,&data,1);	//0x10
+			//HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_LED_PLUSE_AMPLITUDE_1, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_LED_PLUSE_AMPLITUDE_2, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_PROXIMITY_MODE_LED_PLUSE_AMPLITUDE, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    /*FIFO clear*/
+	    data = 0;
+			i2c_write(MAX30102_ADDR_WRITE,RES_FIFO_WRITE_POINTER,&data,1);	//0x04
+			i2c_write(MAX30102_ADDR_WRITE,RES_OVERFLOW_COUNTER,&data,1);	//0x05
+			i2c_write(MAX30102_ADDR_WRITE,RES_FIFO_READ_POINTER,&data,1);	//0x06
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_FIFO_WRITE_POINTER, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_OVERFLOW_COUNTER, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_FIFO_READ_POINTER, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+	    /*interrupt status clear*/
+	    data = max30102_getStatus();
+	    data = 0x03;
+			i2c_write(MAX30102_ADDR_WRITE,RES_MODE_CONFIGURATION,&data,1);	//0x09
+	    HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
 }
+
+void vMax30102Shutdown(void) {
+    uint8_t data = 0;
+		i2c_read(MAX30102_ADDR_READ,RES_MODE_CONFIGURATION,&data, 1);
+    //HAL_I2C_Mem_Read(&max1002I2c, MAX30102_ADDR_READ, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+    data |= 0x80;
+		i2c_write(MAX30102_ADDR_WRITE,RES_MODE_CONFIGURATION,&data,1);
+    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+}
+
+void  vMax30102StartUp(void) {
+    uint8_t data = 0;
+		i2c_read(MAX30102_ADDR_READ,RES_MODE_CONFIGURATION,&data, 1);
+    //HAL_I2C_Mem_Read(&max1002I2c, MAX30102_ADDR_READ, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+    data &= ~(0x80);
+		i2c_write(MAX30102_ADDR_WRITE,RES_MODE_CONFIGURATION,&data,1);
+    //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
+}
+
 void vMax30102ReadData(void) {
-	vsReadSensor();
-	if (mMax30102Sensor.uiHR > 7000) {
-		vsGetAvarageBeat();
-		mMax30102Sensor.ucPrintRegisterCounter++;
-		if (mMax30102Sensor.ucPrintRegisterCounter >= 0xEE) {
-			vsPrintRegisters();
-			mMax30102Sensor.iNumOfSample = isGetNumSamp();
+
+	if (HAL_GPIO_ReadPin(MAX30102_INT_GPIO_Port, MAX30102_INT_Pin)	== GPIO_PIN_RESET) {
+
+		unreadSampleCount = max30102_getUnreadSampleCount();
+		if(unreadSampleCount == 0 )
+			return;
+		max30102_getFIFO(sampleBuffTemp, unreadSampleCount);
+
+		static uint8_t eachBeatSampleCount = 0;    //????????????
+		static uint8_t lastTenBeatSampleCount[10]; //?????????????
+		static uint32_t last_iRed = 0;             //???????,????
+		uint8_t i, ii;
+		for (i = 0; i < unreadSampleCount; i++) {
+			if (sampleBuffTemp[i].iRed < 40000) //??????,??
+					{
+				mMax30102Sensor.ucHR = 0;
+				mMax30102Sensor.ucSPO2 = 0;
+				mMax30102Sensor.usDiff = 0;
+				mMax30102Sensor.uiIRed = 0;
+				mMax30102Sensor.uiRed = 0;
+				continue;
+			}
+			mMax30102Sensor.uiIRed = sampleBuffTemp[i].iRed;
+			mMax30102Sensor.uiRed = sampleBuffTemp[i].red;
+			buffInsert(sampleBuffTemp[i]);
+			calAcDc(&redAC, &redDC, &iRedAC, &iRedDC);
+			filter(&sampleBuffTemp[i]);
+			//??spo2
+			float R = (((float) (redAC)) / ((float) (redDC)))
+					/ (((float) (iRedAC)) / ((float) (iRedDC)));
+			if (R >= 0.36 && R < 0.66)
+				mMax30102Sensor.ucSPO2 = (uint8_t) (107 - 20 * R);
+			else if (R >= 0.66 && R < 1)
+				mMax30102Sensor.ucSPO2 = (uint8_t) (129.64 - 54 * R);
+			//????,30-250ppm  count:200-12
+			mMax30102Sensor.usDiff = last_iRed - sampleBuffTemp[i].iRed;
+			if (mMax30102Sensor.usDiff > 50 && eachBeatSampleCount > 12) {
+				for (ii = 9; ii > 0; ii--)
+					lastTenBeatSampleCount[i] = lastTenBeatSampleCount[i - 1];
+				lastTenBeatSampleCount[0] = eachBeatSampleCount;
+				uint32_t totalTime = 0;
+				for (ii = 0; ii < 10; ii++)
+					totalTime += lastTenBeatSampleCount[i];
+				mMax30102Sensor.ucHR = (uint8_t) (60.0 * 10 / 0.02
+						/ ((float) totalTime));
+				eachBeatSampleCount = 0;
+			}
+			last_iRed = sampleBuffTemp[i].iRed;
+			eachBeatSampleCount++;
 		}
+
 	}
 }
 
-unsigned int uiGetHR() {
-	return mMax30102Sensor.uiHR;
+unsigned char ucGetMax30102HR() {
+	return mMax30102Sensor.ucHR;
 }
 
-unsigned int uiGetSPO2() {
-	return mMax30102Sensor.uiSPO2;
+unsigned char ucGetMax30102SPO2() {
+	return mMax30102Sensor.ucSPO2;
 }
 
-unsigned int uiGetCumPulse() {
-	return mMax30102Sensor.uiCumulativePulseInterval;
+unsigned short usGetMax30102Diff() {
+	return mMax30102Sensor.usDiff;
 }
 
-unsigned int uiGetPulseCounter() {
+unsigned int uiGetMax30102PulseCounter() {
 	return mMax30102Sensor.usPulseCounter;
 }
 
+uint32_t uiGetMax30102Red(){
+	return mMax30102Sensor.uiRed;
+}
+uint32_t uiGetMax30102IRed(){
+	return mMax30102Sensor.uiIRed;
+}

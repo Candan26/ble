@@ -26,6 +26,7 @@ int32_t i = 0;
 int64_t slEcgData;
 uint64_t ulData;
 uint64_t ulECGRaw = 0;
+uint32_t uicounterOfReset = 0;
 
 uint32_t ecgFIFO, readECGSamples, idx, ETAG[32], status;
 int16_t ecgSample[32];
@@ -187,6 +188,39 @@ TypeDefEnableInterrupts EN_INT_r;
 TypeDefManageDynamicModes MNG_DYN_r;
 TypeDefMuxConfiguration CNFG_MUX_r;
 
+
+uint16_t usaSquareWave[]= { 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
+							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
+							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+							0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+							0xfff, 0xfff, 0xfff, 0xfff,
+							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
+							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
+							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
+							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
+							0x0, 0x0, 0x0, 0x0,
+							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+};
+int d=0;
+uint16_t usaSinWave[]= {
+			0x7ff, 0x86a, 0x8d5, 0x93f, 0x9a9, 0xa11, 0xa78, 0xadd, 0xb40, 0xba1,
+		    0xbff, 0xc5a, 0xcb2, 0xd08, 0xd59, 0xda7, 0xdf1, 0xe36, 0xe77, 0xeb4,
+		    0xeec, 0xf1f, 0xf4d, 0xf77, 0xf9a, 0xfb9, 0xfd2, 0xfe5, 0xff3, 0xffc,
+		    0xfff, 0xffc, 0xff3, 0xfe5, 0xfd2, 0xfb9, 0xf9a, 0xf77, 0xf4d, 0xf1f,
+		    0xeec, 0xeb4, 0xe77, 0xe36, 0xdf1, 0xda7, 0xd59, 0xd08, 0xcb2, 0xc5a,
+		    0xbff, 0xba1, 0xb40, 0xadd, 0xa78, 0xa11, 0x9a9, 0x93f, 0x8d5, 0x86a,
+		    0x7ff, 0x794, 0x729, 0x6bf, 0x655, 0x5ed, 0x586, 0x521, 0x4be, 0x45d,
+		    0x3ff, 0x3a4, 0x34c, 0x2f6, 0x2a5, 0x257, 0x20d, 0x1c8, 0x187, 0x14a,
+		    0x112, 0xdf, 0xb1, 0x87, 0x64, 0x45, 0x2c, 0x19, 0xb, 0x2,
+		    0x0, 0x2, 0xb, 0x19, 0x2c, 0x45, 0x64, 0x87, 0xb1, 0xdf,
+		    0x112, 0x14a, 0x187, 0x1c8, 0x20d, 0x257, 0x2a5, 0x2f6, 0x34c, 0x3a4,
+		    0x3ff, 0x45d, 0x4be, 0x521, 0x586, 0x5ed, 0x655, 0x6bf, 0x729, 0x794
+};
+
+
 // Global Function Definitions
 void vMax30003Init(void) {
 
@@ -212,7 +246,10 @@ void vMax30003Init(void) {
 	max30003WriteRegister(CNFG_ECG, CNFG_ECG_r.all);
 
 	//R-to-R configuration
-
+    CNFG_RTOR_r.bits.wndw = 0b0011;         // WNDW = 96ms
+	CNFG_RTOR_r.bits.rgain = 0b1111;        // Auto-scale gain
+	CNFG_RTOR_r.bits.pavg = 0b11;           // 16-average
+	CNFG_RTOR_r.bits.ptsf = 0b0011;         // PTSF = 4/16
 	CNFG_RTOR_r.bits.en_rtor = 1;           // Enable R-to-R detection
 	max30003WriteRegister(CNFG_RTOR1, CNFG_RTOR_r.all);
 
@@ -226,7 +263,7 @@ void vMax30003Init(void) {
 
 	EN_INT_r.all = 0;
 	EN_INT_r.bits.en_eint = 1;              // Enable EINT interrupt
-	EN_INT_r.bits.en_rrint = 0;             // Disable R-to-R interrupt
+	EN_INT_r.bits.en_rrint = 1;             // Enable  R-to-R interrupt
 	EN_INT_r.bits.intb_type = 3;         // Open-drain NMOS with internal pullup
 	max30003WriteRegister(EN_INT, EN_INT_r.all);
 
@@ -245,6 +282,68 @@ void vMax30003Init(void) {
 }
 
 void vMax30003ReadData(void) {
+	uint8_t ucatmpData[3] = { 0, 0, 0 };
+
+	// Constants
+	const int EINT_STATUS_MASK = 1 << 23;
+    const int RTOR_STATUS =  1 << 10;
+    const int RTOR_REG_OFFSET = 10;
+    const float RTOR_LSB_RES = 0.0078125f;
+	const int FIFO_OVF_MASK = 0x7;
+	const int FIFO_VALID_SAMPLE_MASK = 0x0;
+	const int FIFO_FAST_SAMPLE_MASK = 0x1;
+	const int ETAG_BITS_MASK = 0x7;
+
+
+	if(uicounterOfReset > 150){
+		ecgFIFOIntFlag=1;
+		uicounterOfReset=0;
+	}
+	// Read back ECG samples from the FIFO
+	if (ecgFIFOIntFlag) {
+		//reset data
+		ecgFIFOIntFlag = 0;
+		//uicounterOfReset = 0;
+		status = max30003ReadRegister(STATUS);      // Read the STATUS register
+		// Check if EINT interrupt asserted
+
+		if ((status & RTOR_STATUS) == RTOR_STATUS) {
+			uint32_t tempRtor=0;
+			tempRtor = max30003ReadRegister(RTOR )>>  RTOR_REG_OFFSET;
+			//mMax3003Sensor.ulRtor = (RTOR_msb << 8 | RTOR_lsb);
+			//mMax3003Sensor.ulRtor = ((mMax3003Sensor.ulRtor >> 2) & 0x3fff);
+			mMax3003Sensor.uiRR = tempRtor;
+		}
+
+		if ((status & EINT_STATUS_MASK) == EINT_STATUS_MASK) {
+			readECGSamples = 0;                        // Reset sample counter
+			memset(ecgSample, 0, 32);
+			do {
+				ecgFIFO = max30003ReadRegister(ECG_FIFO);       // Read FIFO
+				ecgSample[readECGSamples] = ecgFIFO >> 8; // Isolate voltage data
+				ETAG[readECGSamples] = (ecgFIFO >> 3) & ETAG_BITS_MASK; // Isolate ETAG
+				readECGSamples++;                    // Increment sample counter
+				// Check that sample is not last sample in FIFO
+			} while (ETAG[readECGSamples - 1] == FIFO_VALID_SAMPLE_MASK
+					|| ETAG[readECGSamples - 1] == FIFO_FAST_SAMPLE_MASK);
+			// Check if FIFO has overflowed
+			if (ETAG[readECGSamples - 1] == FIFO_OVF_MASK) {
+				max30003WriteRegister(FIFO_RST,0); // Reset FIFO
+			}
+			// Print results
+			for (idx = 0; idx < readECGSamples; idx++) {
+				//mMax3003Sensor.usaDataPacketHeader[idx]= usaSinWave[idx + d*15];
+				mMax3003Sensor.usaDataPacketHeader[idx]=ecgSample[idx];
+			}
+			//d++;
+			d= d%3;
+		}
+	}else{
+		uicounterOfReset++;
+	}
+}
+
+void vMax30003ReadDataTemp(void) {
 	uint8_t ucatmpData[3] = { 0, 0, 0 };
 	// Constants
 	const int EINT_STATUS_MASK = 1 << 23;
@@ -292,6 +391,8 @@ void vMax30003ReadData(void) {
 	}
 }
 
+
+//
 unsigned int uiGetMax3003ECG() {
 	return mMax3003Sensor.lEcgData;
 }

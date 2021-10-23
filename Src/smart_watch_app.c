@@ -91,7 +91,7 @@ typedef struct {
 #define GSR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define HR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define SPO2_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
-#define DATA_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL)*2 /*100ms*/
+#define DATA_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL)*5 /*100ms*/
 
 #define BLE_SWITCH_THRESHOLD 4
 #define OFFSET_DATA_HUMIDTY 0
@@ -533,24 +533,25 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_IRED+3-i] = tmpVal.uc[i];
 
-	//get max30102 IRed data
+	//get max30102 Red data
 	tmpVal.ui = uiGetMax30102Red();
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_RED+3-i] = tmpVal.uc[i];
 
 	//get max3003 RR data
-	tmpVal.ui = uiGetMax3003RR();
+	tmpVal.ui = mMax3003Sensor.uiRR;
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_RR+3-i] = tmpVal.uc[i];
-
+	mMax3003Sensor.uiRR = 0 ; // Reset data after sending
 	//get max3003 ECG data
 	int j=0;
 	for(i=0;i<15;i++){
 		tmpVal.ui =  mMax3003Sensor.usaDataPacketHeader[i]%0xFFFF;
 		for(j=0;j<2;j++)
 			value[(OFFSET_DATA_ECG + i*2)+1-j] = tmpVal.uc[j];
+		 mMax3003Sensor.usaDataPacketHeader[i] = 0; // Reset data after sending
 	}
-
+	//TODO  reset data after send
 
 	//get lux data
 	/*

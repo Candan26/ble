@@ -111,8 +111,8 @@ void Error_Handler(void);
 #define LED_GREEN_GPIO_Port GPIOB
 #define LED_BLUE_Pin GPIO_PIN_5
 #define LED_BLUE_GPIO_Port GPIOB
-#define MAX30102_INT_Pin GPIO_PIN_11
-#define MAX30102_INT_GPIO_Port GPIOC
+#define MAX30102_INT_Pin GPIO_PIN_0
+#define MAX30102_INT_GPIO_Port GPIOD
 #define SPI1_CS_Pin GPIO_PIN_5
 #define SPI1_CS_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */

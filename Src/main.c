@@ -175,7 +175,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin )
 
 void initTimer() {
 	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 	//timer 4 for uart packet checking with 10 ms interval for 32 mHz
 	htim16.Instance = TIM16;
 	htim16.Init.Prescaler = 20;//4
@@ -710,9 +710,9 @@ static void MX_TIM17_Init(void)
 
   /* USER CODE END TIM17_Init 1 */
   htim17.Instance = TIM17;
-  htim17.Init.Prescaler = 9;
+  htim17.Init.Prescaler = 97;
   htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim17.Init.Period = 97;
+  htim17.Init.Period = 9;
   htim17.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim17.Init.RepetitionCounter = 0;
   htim17.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;

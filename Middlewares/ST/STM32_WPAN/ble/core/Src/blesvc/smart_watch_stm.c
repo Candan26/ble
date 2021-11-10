@@ -397,7 +397,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	 */
 	COPY_SMART_WATCH_DATA_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
-	UUID_TYPE_128, &uuid16, 60,
+	UUID_TYPE_128, &uuid16, 450,
 	CHAR_PROP_NOTIFY ,
 	ATTR_PERMISSION_NONE,
 	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
@@ -479,7 +479,7 @@ tBleStatus SMART_WATCH_STM_App_Update_Char(uint16_t UUID, uint8_t *pPayload) {
 		result = aci_gatt_update_char_value(
 				aSmartWatchContext.SmartWatchSvcHdle,
 				aSmartWatchContext.SmartWatchNotifyDataCharHdle, 0, /* charValOffset */
-				60, /* charValueLen */
+				450, /* charValueLen */
 				(uint8_t *) pPayload);
 	default:
 		break;

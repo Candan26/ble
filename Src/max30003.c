@@ -90,60 +90,6 @@ void vMax3003InitFormer() {
 	HAL_Delay(MAX3003_INIT_DELAY_TIME);
 }
 
-void vMax3003ReadDataFormer() {
-	uint8_t ucatmpData[3] = { 0, 0, 0 };
-	memset(ucatmpData, 0, 3);
-	vMax30003RegRead(ECG_FIFO, ucatmpData);
-
-	unsigned long data0 = (uint64_t) (ucatmpData[0]);
-	data0 = data0 << 24;
-	unsigned long data1 = (uint64_t) (ucatmpData[1]);
-	data1 = data1 << 16;
-	unsigned long data2 = (uint64_t) (ucatmpData[2]);
-	data2 = data2 >> 6;
-	data2 = data2 & 0x03;
-	mMax3003Sensor.ulData = (uint64_t) (data0 | data1 | data2);
-	mMax3003Sensor.lEcgData = (int64_t) (mMax3003Sensor.ulData);
-	memset(ucatmpData, 0, 3);
-	vMax30003RegRead(RTOR, ucatmpData);
-	uint64_t RTOR_msb = (uint64_t) (ucatmpData[0]);
-	// RTOR_msb = RTOR_msb <<8;
-	uint8_t RTOR_lsb = (uint8_t) (ucatmpData[1]);
-
-	mMax3003Sensor.ulRtor = (RTOR_msb << 8 | RTOR_lsb);
-	mMax3003Sensor.ulRtor = ((mMax3003Sensor.ulRtor >> 2) & 0x3fff);
-
-	mMax3003Sensor.fHR = 60 / ((float) mMax3003Sensor.ulRtor * 0.0098125);
-	mMax3003Sensor.uiHR = (uint32_t) mMax3003Sensor.fHR;  // type cast to int
-	mMax3003Sensor.uiRR = (uint32_t) mMax3003Sensor.ulRtor * (9.8125);
-	//;
-	/*
-	 mMax3003Sensor.ucaDataPacketHeader[0] = 0x0A;
-	 mMax3003Sensor.ucaDataPacketHeader[1] = 0xFA;
-	 mMax3003Sensor.ucaDataPacketHeader[2] = 0x0C;
-	 mMax3003Sensor.ucaDataPacketHeader[3] = 0;
-	 mMax3003Sensor.ucaDataPacketHeader[4] = 0x02;
-
-	 mMax3003Sensor.ucaDataPacketHeader[5] = mMax3003Sensor.lEcgData;
-	 mMax3003Sensor.ucaDataPacketHeader[6] = mMax3003Sensor.lEcgData >> 8;
-	 mMax3003Sensor.ucaDataPacketHeader[7] = mMax3003Sensor.lEcgData >> 16;
-	 mMax3003Sensor.ucaDataPacketHeader[8] = mMax3003Sensor.lEcgData >> 24;
-
-	 mMax3003Sensor.ucaDataPacketHeader[9] = mMax3003Sensor.uiRR;
-	 mMax3003Sensor.ucaDataPacketHeader[10] = mMax3003Sensor.uiRR >> 8;
-	 mMax3003Sensor.ucaDataPacketHeader[11] = 0x00;
-	 mMax3003Sensor.ucaDataPacketHeader[12] = 0x00;
-
-	 mMax3003Sensor.ucaDataPacketHeader[13] = mMax3003Sensor.uiHR;
-	 mMax3003Sensor.ucaDataPacketHeader[14] = mMax3003Sensor.uiHR >> 8;
-	 mMax3003Sensor.ucaDataPacketHeader[15] = 0x00;
-	 mMax3003Sensor.ucaDataPacketHeader[16] = 0x00;
-
-	 mMax3003Sensor.ucaDataPacketHeader[17] = 0x00;
-	 mMax3003Sensor.ucaDataPacketHeader[18] = 0x0b;
-	 */
-}
-
 uint32_t max30003ReadRegister(uint8_t addrs) {
 	uint32_t data = 0;
 	uint8_t data_buffer[3];
@@ -187,39 +133,6 @@ TypeDefManageInterrupts MNG_INT_r;
 TypeDefEnableInterrupts EN_INT_r;
 TypeDefManageDynamicModes MNG_DYN_r;
 TypeDefMuxConfiguration CNFG_MUX_r;
-
-
-uint16_t usaSquareWave[]= { 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
-							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
-							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-							0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-							0xfff, 0xfff, 0xfff, 0xfff,
-							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
-							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
-							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
-							0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff,
-							0x0, 0x0, 0x0, 0x0,
-							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
-};
-int d=0;
-uint16_t usaSinWave[]= {
-			0x7ff, 0x86a, 0x8d5, 0x93f, 0x9a9, 0xa11, 0xa78, 0xadd, 0xb40, 0xba1,
-		    0xbff, 0xc5a, 0xcb2, 0xd08, 0xd59, 0xda7, 0xdf1, 0xe36, 0xe77, 0xeb4,
-		    0xeec, 0xf1f, 0xf4d, 0xf77, 0xf9a, 0xfb9, 0xfd2, 0xfe5, 0xff3, 0xffc,
-		    0xfff, 0xffc, 0xff3, 0xfe5, 0xfd2, 0xfb9, 0xf9a, 0xf77, 0xf4d, 0xf1f,
-		    0xeec, 0xeb4, 0xe77, 0xe36, 0xdf1, 0xda7, 0xd59, 0xd08, 0xcb2, 0xc5a,
-		    0xbff, 0xba1, 0xb40, 0xadd, 0xa78, 0xa11, 0x9a9, 0x93f, 0x8d5, 0x86a,
-		    0x7ff, 0x794, 0x729, 0x6bf, 0x655, 0x5ed, 0x586, 0x521, 0x4be, 0x45d,
-		    0x3ff, 0x3a4, 0x34c, 0x2f6, 0x2a5, 0x257, 0x20d, 0x1c8, 0x187, 0x14a,
-		    0x112, 0xdf, 0xb1, 0x87, 0x64, 0x45, 0x2c, 0x19, 0xb, 0x2,
-		    0x0, 0x2, 0xb, 0x19, 0x2c, 0x45, 0x64, 0x87, 0xb1, 0xdf,
-		    0x112, 0x14a, 0x187, 0x1c8, 0x20d, 0x257, 0x2a5, 0x2f6, 0x34c, 0x3a4,
-		    0x3ff, 0x45d, 0x4be, 0x521, 0x586, 0x5ed, 0x655, 0x6bf, 0x729, 0x794
-};
-
 
 // Global Function Definitions
 void vMax30003Init(void) {
@@ -310,9 +223,18 @@ void vMax30003ReadData(void) {
 		if ((status & RTOR_STATUS) == RTOR_STATUS) {
 			uint32_t tempRtor=0;
 			tempRtor = max30003ReadRegister(RTOR )>>  RTOR_REG_OFFSET;
-			//mMax3003Sensor.ulRtor = (RTOR_msb << 8 | RTOR_lsb);
-			//mMax3003Sensor.ulRtor = ((mMax3003Sensor.ulRtor >> 2) & 0x3fff);
-			mMax3003Sensor.uiRR = tempRtor;
+			mMax3003Sensor.faBpm[mMax3003Sensor.ucBpmCounter] = 1.0f / ( tempRtor * RTOR_LSB_RES / 60.0f );
+			mMax3003Sensor.ucBpmCounter++;
+			if(mMax3003Sensor.ucBpmCounter>=5){
+				mMax3003Sensor.ucBpmCounter=0;
+			}
+
+			mMax3003Sensor.uiaRorVal[mMax3003Sensor.ucRorCounter] = tempRtor;
+			mMax3003Sensor.ucRorCounter++;
+			if(mMax3003Sensor.ucRorCounter>=5){
+				mMax3003Sensor.ucRorCounter=0;
+			}
+
 		}
 
 		if ((status & EINT_STATUS_MASK) == EINT_STATUS_MASK) {
@@ -333,73 +255,19 @@ void vMax30003ReadData(void) {
 			// Print results
 			for (idx = 0; idx < readECGSamples; idx++) {
 				//mMax3003Sensor.usaDataPacketHeader[idx]= usaSinWave[idx + d*15];
-				mMax3003Sensor.usaDataPacketHeader[idx]=ecgSample[idx];
+				mMax3003Sensor.usaEcgVal[mMax3003Sensor.usEcgCounter]=ecgSample[idx];
+				mMax3003Sensor.usEcgCounter++;
+				if(mMax3003Sensor.usEcgCounter>=160){
+					mMax3003Sensor.usEcgCounter=0;
+				}
 			}
-			//d++;
-			d= d%3;
 		}
 	}else{
 		uicounterOfReset++;
 	}
 }
-
-void vMax30003ReadDataTemp(void) {
-	uint8_t ucatmpData[3] = { 0, 0, 0 };
-	// Constants
-	const int EINT_STATUS_MASK = 1 << 23;
-	const int FIFO_OVF_MASK = 0x7;
-	const int FIFO_VALID_SAMPLE_MASK = 0x0;
-	const int FIFO_FAST_SAMPLE_MASK = 0x1;
-	const int ETAG_BITS_MASK = 0x7;
-	// Read back ECG samples from the FIFO
-	if (ecgFIFOIntFlag) {
-		//reset data
-		for (idx = 0; idx < 50; idx++)
-			mMax3003Sensor.usaDataPacketHeader[idx];
-		ecgFIFOIntFlag = 0;
-		status = max30003ReadRegister(0x01);      // Read the STATUS register
-		// Check if EINT interrupt asserted
-		if ((status & EINT_STATUS_MASK) == EINT_STATUS_MASK) {
-			readECGSamples = 0;                        // Reset sample counter
-			memset(ecgSample, 0, 32);
-			do {
-				ecgFIFO = max30003ReadRegister(0x21);       // Read FIFO
-				ecgSample[readECGSamples] = ecgFIFO >> 8; // Isolate voltage data
-				ETAG[readECGSamples] = (ecgFIFO >> 3) & ETAG_BITS_MASK; // Isolate ETAG
-				readECGSamples++;                    // Increment sample counter
-				// Check that sample is not last sample in FIFO
-			} while (ETAG[readECGSamples - 1] == FIFO_VALID_SAMPLE_MASK
-					|| ETAG[readECGSamples - 1] == FIFO_FAST_SAMPLE_MASK);
-			// Check if FIFO has overflowed
-			if (ETAG[readECGSamples - 1] == FIFO_OVF_MASK) {
-				max30003ReadRegister(0x0A); // Reset FIFO
-			}
-			// Print results
-			for (idx = 0; idx < readECGSamples; idx++) {
-				mMax3003Sensor.usaDataPacketHeader[idx]=ecgSample[idx];
-			}
-
-		}
-		memset(ucatmpData, 0, 3);
-		vMax30003RegRead(RTOR, ucatmpData);
-		uint64_t RTOR_msb = (uint64_t) (ucatmpData[0]);
-		// RTOR_msb = RTOR_msb <<8;
-		uint8_t RTOR_lsb = (uint8_t) (ucatmpData[1]);
-		mMax3003Sensor.ulRtor = (RTOR_msb << 8 | RTOR_lsb);
-		mMax3003Sensor.ulRtor = ((mMax3003Sensor.ulRtor >> 2) & 0x3fff);
-		mMax3003Sensor.uiRR = (uint32_t) mMax3003Sensor.ulRtor * (9.8125);
-	}
-}
-
-
 //
 unsigned int uiGetMax3003ECG() {
 	return mMax3003Sensor.lEcgData;
-}
-unsigned int uiGetMax3003RR() {
-	return mMax3003Sensor.uiRR;
-}
-unsigned int uiGetMax3003HR() {
-	return mMax3003Sensor.uiHR;
 }
 

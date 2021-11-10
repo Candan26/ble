@@ -299,13 +299,13 @@ void vReadSensorData(void){
 	systemInit();
 
 	/* USER CODE END 2 */
-	APPE_Init();
+	//APPE_Init();
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
-		SCH_Run(~0);
+		//SCH_Run(~0);
 		vReadSensorData();
 		//vOledBlePrintGSR((float)uiGetGSRHumanResistance());
 		//HAL_Delay(8);

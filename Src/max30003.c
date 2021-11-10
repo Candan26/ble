@@ -331,9 +331,12 @@ void vMax30003ReadData(void) {
 				max30003WriteRegister(FIFO_RST,0); // Reset FIFO
 			}
 			// Print results
+			unsigned char text[20];
 			for (idx = 0; idx < readECGSamples; idx++) {
-				//mMax3003Sensor.usaDataPacketHeader[idx]= usaSinWave[idx + d*15];
 				mMax3003Sensor.usaDataPacketHeader[idx]=ecgSample[idx];
+				sprintf((char*)text,"%6d\r\n",ecgSample[idx]);
+				HAL_UART_Transmit(&huart1,text,8,300);
+				memset(text,0,20);
 			}
 			//d++;
 			d= d%3;

@@ -26,7 +26,6 @@ int32_t i = 0;
 int64_t slEcgData;
 uint64_t ulData;
 uint64_t ulECGRaw = 0;
-uint32_t uicounterOfReset = 0;
 
 uint32_t ecgFIFO, readECGSamples, idx, ETAG[32], status;
 int16_t ecgSample[32];
@@ -204,7 +203,7 @@ uint16_t usaSquareWave[]= { 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xfff, 0xf
 							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 							0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 };
-int d=0;
+
 uint16_t usaSinWave[]= {
 			0x7ff, 0x86a, 0x8d5, 0x93f, 0x9a9, 0xa11, 0xa78, 0xadd, 0xb40, 0xba1,
 		    0xbff, 0xc5a, 0xcb2, 0xd08, 0xd59, 0xda7, 0xdf1, 0xe36, 0xe77, 0xeb4,
@@ -241,7 +240,7 @@ void vMax30003Init(void) {
 
 	CNFG_ECG_r.bits.dlpf = 1;       // Digital LPF cutoff = 40Hz
 	CNFG_ECG_r.bits.dhpf = 1;       // Digital HPF cutoff = 0.5Hz
-	CNFG_ECG_r.bits.gain = 3;       // ECG gain = 160V/V
+	CNFG_ECG_r.bits.gain = 2;       // ECG gain = 160V/V
 	CNFG_ECG_r.bits.rate = 2;       // Sample rate = 128 sps
 	max30003WriteRegister(CNFG_ECG, CNFG_ECG_r.all);
 
@@ -295,15 +294,11 @@ void vMax30003ReadData(void) {
 	const int ETAG_BITS_MASK = 0x7;
 
 
-	if(uicounterOfReset > 150){
-		ecgFIFOIntFlag=1;
-		uicounterOfReset=0;
-	}
+
 	// Read back ECG samples from the FIFO
 	if (ecgFIFOIntFlag) {
 		//reset data
 		ecgFIFOIntFlag = 0;
-		//uicounterOfReset = 0;
 		status = max30003ReadRegister(STATUS);      // Read the STATUS register
 		// Check if EINT interrupt asserted
 
@@ -331,18 +326,14 @@ void vMax30003ReadData(void) {
 				max30003WriteRegister(FIFO_RST,0); // Reset FIFO
 			}
 			// Print results
-			unsigned char text[20];
 			for (idx = 0; idx < readECGSamples; idx++) {
 				mMax3003Sensor.usaDataPacketHeader[idx]=ecgSample[idx];
-				sprintf((char*)text,"%6d\r\n",ecgSample[idx]);
-				HAL_UART_Transmit(&huart1,text,8,300);
-				memset(text,0,20);
+#ifdef DEBUG_ECG
+				printSensorData(ecgSample[idx]);
+#endif
 			}
-			//d++;
-			d= d%3;
+
 		}
-	}else{
-		uicounterOfReset++;
 	}
 }
 

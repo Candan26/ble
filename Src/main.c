@@ -131,6 +131,9 @@ void prsCheckAI() {
 	if (!ucIsResponseFinished)
 		return;
 	ucIsResponseFinished = 0;
+#ifdef DEBUG_GSR
+	printSensorData(uiGetGSRHumanResistance());
+#endif
 	HAL_ADC_Start_IT(&hadc1);
 	/*
 	if (HAL_ADC_Start_IT(&AdcHandle) != HAL_OK) {
@@ -155,13 +158,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		uiTimer16Counter++; // counter for AD8232
 		if (uiTimer16Counter >= 9) {
 			uiTimer16Counter = 0;
-			//prsCheckAI();
+			prsCheckAI();
 			//vSi7021ProcessHumidityAndTemperature();
 			//vTsl2561ProcessLuminity();
 			//vMax30003ReadData();
 			//vMax30102ReadData();
 		}
 		*/
+		//prsCheckAI();
 		ucHRSensorReadFlag = 1;
 	}
 }
@@ -214,7 +218,7 @@ void vSetGSRAnalogValue(uint32_t value){
 }
 
 uint32_t uiGetGSRHumanResistance(void){
-	return uiGSRRawData;//((1024+2*uiGSRRawData)*10000)/(512-uiGSRRawData);
+	return uiGSRRawData;//((1024+2*uiGSRRawData))/(512-uiGSRRawData);//uiGSRRawData;//
 }
 
 unsigned char ucGetAd8232AnalogValue() {
@@ -245,13 +249,21 @@ void vSetAdcChannel(uint32_t adcChannel){
 
 void vReadSensorData(void){
 	if(ucHRSensorReadFlag == 1){
-		//vSi7021ProcessHumidityAndTemperature();
+		vSi7021ProcessHumidityAndTemperature();
 		vMax30003ReadData();
-		//vMax30102ReadData();
-		//ucHRSensorReadFlag=0;
-		//HAL_ADC_Start_DMA(&hadc1,&uiGSRRawData,1);
+		vMax30102ReadData();
+		ucHRSensorReadFlag=0;
+		HAL_ADC_Start_DMA(&hadc1,&uiGSRRawData,1);
 	}
 
+}
+
+
+void printSensorData(uint32_t data){
+	unsigned char text[20];
+	sprintf((char*)text,"%6d\r\n",data);
+	HAL_UART_Transmit(&huart1,text,8,300);
+	memset(text,0,20);
 }
 
 /* USER CODE END 0 */
@@ -299,13 +311,13 @@ void vReadSensorData(void){
 	systemInit();
 
 	/* USER CODE END 2 */
-	//APPE_Init();
+	APPE_Init();
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
-		//SCH_Run(~0);
+		SCH_Run(~0);
 		vReadSensorData();
 		//vOledBlePrintGSR((float)uiGetGSRHumanResistance());
 		//HAL_Delay(8);

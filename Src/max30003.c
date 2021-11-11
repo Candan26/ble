@@ -207,7 +207,7 @@ void vMax30003Init(void) {
 
 	CNFG_ECG_r.bits.dlpf = 1;       // Digital LPF cutoff = 40Hz
 	CNFG_ECG_r.bits.dhpf = 1;       // Digital HPF cutoff = 0.5Hz
-	CNFG_ECG_r.bits.gain = 3;       // ECG gain = 160V/V
+	CNFG_ECG_r.bits.gain = 2;       // ECG gain = 160V/V
 	CNFG_ECG_r.bits.rate = 2;       // Sample rate = 128 sps
 	max30003WriteRegister(CNFG_ECG, CNFG_ECG_r.all);
 
@@ -276,12 +276,11 @@ void vMax30003ReadData(void) {
 				max30003ReadRegister(0x0A); // Reset FIFO
 			}
 			// Print results
-			unsigned char text[20];
 			for (idx = 0; idx < readECGSamples; idx++) {
 				mMax3003Sensor.usaDataPacketHeader[idx]=ecgSample[idx];
-				sprintf((char*)text,"%6d\r\n",ecgSample[idx]);
-				HAL_UART_Transmit(&huart1,text,8,300);
-				memset(text,0,20);
+#ifdef DEBUG_ECG
+				printSensorData(ecgSample[idx]);
+#endif
 			}
 
 		}

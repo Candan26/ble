@@ -123,6 +123,8 @@ unsigned char ucGetAd8232AnalogValue();
 unsigned int uiGetAd8232AnalogValue();
 unsigned short usGetAd8232AnalogValue();
 uint32_t uiGetGSRHumanResistance(void);
+void printSensorData(uint32_t data);
+#define DEBUG_GSR
 extern volatile uint8_t ecgFIFOIntFlag;
 extern I2C_HandleTypeDef hi2c3;
 extern UART_HandleTypeDef huart1;

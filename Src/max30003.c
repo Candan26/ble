@@ -154,7 +154,7 @@ void vMax30003Init(void) {
 
 	CNFG_ECG_r.bits.dlpf = 1;       // Digital LPF cutoff = 40Hz
 	CNFG_ECG_r.bits.dhpf = 1;       // Digital HPF cutoff = 0.5Hz
-	CNFG_ECG_r.bits.gain = 3;       // ECG gain = 160V/V
+	CNFG_ECG_r.bits.gain = 2;       // ECG gain = 160V/V
 	CNFG_ECG_r.bits.rate = 2;       // Sample rate = 128 sps
 	max30003WriteRegister(CNFG_ECG, CNFG_ECG_r.all);
 
@@ -201,7 +201,7 @@ void vMax30003ReadData(void) {
 	const int EINT_STATUS_MASK = 1 << 23;
     const int RTOR_STATUS =  1 << 10;
     const int RTOR_REG_OFFSET = 10;
-    const float RTOR_LSB_RES = 0.0078125f;
+    const float RTOR_LSB_RES = 0.078125f;
 	const int FIFO_OVF_MASK = 0x7;
 	const int FIFO_VALID_SAMPLE_MASK = 0x0;
 	const int FIFO_FAST_SAMPLE_MASK = 0x1;
@@ -257,6 +257,10 @@ void vMax30003ReadData(void) {
 				//mMax3003Sensor.usaDataPacketHeader[idx]= usaSinWave[idx + d*15];
 				mMax3003Sensor.usaEcgVal[mMax3003Sensor.usEcgCounter]=ecgSample[idx];
 				mMax3003Sensor.usEcgCounter++;
+#ifdef DEBUG_ECG
+				printSensorData(ecgSample[idx]);
+#endif
+
 				if(mMax3003Sensor.usEcgCounter>=160){
 					mMax3003Sensor.usEcgCounter=0;
 				}

@@ -303,38 +303,42 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	/**
 	 *   Add Temperature Characteristic
 	 */
+	/*
 	COPY_SMART_WATCH_TEMPERATURE_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
 	CHAR_PROP_NOTIFY ,
 	ATTR_PERMISSION_NONE,
-	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
-	10, /* encryKeySize */
-	1, /* isVariable: 1 */
+	GATT_NOTIFY_ATTRIBUTE_WRITE,
+	10,
+	1,
 	&(aSmartWatchContext.SmartWatchNotifyTemperatureCharHdle));
+
 	/**
 	 *   Add Humidity Characteristic
 	 */
+	/*
 	COPY_SMART_WATCH_HUMIDITY_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
 	CHAR_PROP_NOTIFY,// | CHAR_PROP_READ | CHAR_PROP_WRITE,
 	ATTR_PERMISSION_NONE,
-	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
-	10, /* encryKeySize */
-	1, /* isVariable: 1 */
+	GATT_NOTIFY_ATTRIBUTE_WRITE,
+	10,
+	1,
 	&(aSmartWatchContext.SmartWatchNotifyHumidityCharHdle));
 	/**
 	 *   Add EGR Characteristic
 	 */
+	/*
 	COPY_SMART_WATCH_EGR_SENOR_CHAR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 8,
 	CHAR_PROP_NOTIFY ,
 	ATTR_PERMISSION_NONE,
-	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
-	10, /* encryKeySize */
-	1, /* isVariable: 1 */
+	GATT_NOTIFY_ATTRIBUTE_WRITE,
+	10,
+	1,
 	&(aSmartWatchContext.SmartWatchNotifyEGRCharHdle));
 
 	/**
@@ -355,19 +359,20 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	/**
 	 *   Add GSR Characteristic
 	 */
+	/*
 	COPY_SMART_WATCH_GSR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 4,
 	CHAR_PROP_NOTIFY,
 	ATTR_PERMISSION_NONE,
-	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
-	10, /* encryKeySize */
-	1, /* isVariable: 1 */
+	GATT_NOTIFY_ATTRIBUTE_WRITE,
+	10,
+	1,
 	&(aSmartWatchContext.SmartWatchNotifyGSRCharHdle));
 	/**
 	 *   Add HR Characteristic
 	 */
-
+	/*
 	COPY_SMART_WATCH_HR_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 16,

@@ -91,7 +91,7 @@ typedef struct {
 #define GSR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define HR_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
 #define SPO2_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL) /*100ms*/
-#define DATA_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL)*5 /*100ms*/
+#define DATA_CHANGE_PERIOD (0.1*1000*1000/CFG_TS_TICK_VAL)*2 /*100ms*/
 
 #define BLE_SWITCH_THRESHOLD 4
 #define OFFSET_DATA_HUMIDTY 0
@@ -131,12 +131,12 @@ PLACE_IN_SECTION("BLE_APP_CONTEXT") static SMART_WATCH_App_Context_t SMART_WATCH
 /* Private functions ---------------------------------------------------------*/
 static void SMART_WATCH_context_Init(void);
 static void SMART_WATCH_Send_Notification_Task(void);
-static void SMART_WATCH_EGR_Timer_Callback(void);
-static void SMART_WATCH_Temperature_Timer_Callback(void);
-static void SMART_WATCH_Humidity_Timer_Callback(void);
+//static void SMART_WATCH_EGR_Timer_Callback(void);
+//static void SMART_WATCH_Temperature_Timer_Callback(void);
+//static void SMART_WATCH_Humidity_Timer_Callback(void);
 //static void SMART_WATCH_LUX_Timer_Callback(void);
-static void SMART_WATCH_GSR_Timer_Callback(void);
-static void SMART_WATCH_HR_Timer_Callback(void);
+//static void SMART_WATCH_GSR_Timer_Callback(void);
+//static void SMART_WATCH_HR_Timer_Callback(void);
 //static void SMART_WATCH_SPO2_Timer_Callback(void);
 static void SMART_WATCH_DATA_Timer_Callback(void);
 /* Public functions ----------------------------------------------------------*/
@@ -291,17 +291,18 @@ void SMART_WATCH_STM_App_Notification_Data(SMART_WATCH_STM_App_Notification_evt_
 
 void SMART_WATCH_APP_Init(void) {
 	/* Register task used to update the characteristic (send the notification) */
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_EGR,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_HUMIDITY,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_EGR,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_HUMIDITY,SMART_WATCH_Send_Notification_Task);
 	//SCH_RegTask(CFG_MY_TASK_NOTIFY_LUX,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_GSR,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_HR,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_GSR,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_HR,SMART_WATCH_Send_Notification_Task);
 	//SCH_RegTask(CFG_MY_TASK_NOTIFY_SPO2,SMART_WATCH_Send_Notification_Task);
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_DATA,SMART_WATCH_Send_Notification_Task);
 	/* Create timer to change the Temperature and update charecteristic */
 	//initilizing ble timers
 	APP_DBG_MSG("Initializing BLE timers \n");
+	/*
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_Temparature_Id),
 	      hw_ts_Repeated,
@@ -325,7 +326,7 @@ void SMART_WATCH_APP_Init(void) {
 	      hw_ts_Repeated,
 		  SMART_WATCH_LUX_Timer_Callback);
 	APP_DBG_MSG("LUX soft BLE timer created \n");
-*/
+
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_GSR_Id),
 	      hw_ts_Repeated,
@@ -338,6 +339,7 @@ void SMART_WATCH_APP_Init(void) {
 	      hw_ts_Repeated,
 		  SMART_WATCH_HR_Timer_Callback);
 	APP_DBG_MSG("HRt BLE timer created \n");
+	*/
 /*
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_SPO2_Id),
@@ -362,6 +364,7 @@ void SMART_WATCH_APP_Init(void) {
  * LOCAL FUNCTIONS
  *
  *************************************************************/
+/*
 static void SMART_WATCH_Humidity_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
@@ -420,6 +423,7 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 		sucPrintCounter=0;
 	}
 */
+/*
 	SMART_WATCH_STM_App_Update_Char(SWITCH_EGR, (uint8_t *) &value);
 }
 /*
@@ -436,6 +440,7 @@ static void SMART_WATCH_LUX_Timer_Callback(void) {
 	SMART_WATCH_STM_App_Update_Char(SWITCH_LUX, (uint8_t *) &value);
 }
 */
+/*
 static void SMART_WATCH_GSR_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;

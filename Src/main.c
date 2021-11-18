@@ -35,6 +35,8 @@
 #include "max30102.h"
 #include "max30003.h"
 #include "oled.h"
+#include <stdio.h>
+#include <string.h>
 //TODO Pars analog datas
 /* USER CODE END PTD */
 
@@ -83,7 +85,7 @@ static void MX_TIM16_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM17_Init(void);
 /* USER CODE BEGIN PFP */
-volatile uint32_t uiGSRRawData=0;
+uint32_t uiGSRRawData=0;
 volatile static unsigned int uiAd8232AnalogConvertedValue = 0;
 volatile static unsigned char ucAd8232AnalogConvertedValue = 0;
 volatile static unsigned short usAd8232AnalogConvertedValue = 0;
@@ -125,12 +127,29 @@ volatile uint16_t usADCxConvertedData_Voltage_mVolt = 0; /* Value of voltage cal
 /*  2: ADC group regular unitary conversion has not been started yet          */
 /*     (initial state)                                                        */
 
+int groveGsrCounter = 0 ;
+long groveVal;
 void prsCheckAI() {
 	/* Init variable containing ADC conversion data */
 	uhADCxConvertedData = VAR_CONVERTED_DATA_INIT_VALUE;
 	if (!ucIsResponseFinished)
 		return;
 	ucIsResponseFinished = 0;
+#ifdef DEBUG_GSR
+
+	uint32_t val = (unsigned int)dCalculateKalmanDataSet((double)uiGetGSRHumanResistance());
+	printSensorData(val);
+	/*
+	groveGsrCounter++;
+	groveVal = groveVal + uiGetGSRHumanResistance();
+	if(groveGsrCounter>= 1 ){
+		printSensorData(groveVal/2);
+		groveVal=0;
+		groveGsrCounter = 0;
+	}
+	*/
+
+#endif
 	HAL_ADC_Start_IT(&hadc1);
 	/*
 	if (HAL_ADC_Start_IT(&AdcHandle) != HAL_OK) {
@@ -162,6 +181,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			//vMax30102ReadData();
 		}
 		*/
+		prsCheckAI();
 		ucHRSensorReadFlag = 1;
 	}
 }
@@ -205,7 +225,7 @@ void systemInit(void) {
 	//vMax30102Shutdown();
 	//HAL_Delay(15);
 	//tTsl2561Init();
-	//vInitKalman(KALMAN_FILTER_ACTIVATION_LEVEL,0,KALMAN_FILTER_DEFAULT_MIN_CRETERIA);
+	vInitKalman(KALMAN_FILTER_ACTIVATION_LEVEL,0,KALMAN_FILTER_DEFAULT_MIN_CRETERIA);
 
 }
 
@@ -254,6 +274,14 @@ void vReadSensorData(void){
 
 }
 
+void printSensorData(uint32_t data){
+	unsigned char text[20];
+	sprintf((char*)text,"%6d\r\n",data);
+	HAL_UART_Transmit(&huart1,text,8,300);
+	memset(text,0,20);
+}
+
+
 /* USER CODE END 0 */
 
 /**
@@ -299,13 +327,13 @@ void vReadSensorData(void){
 	systemInit();
 
 	/* USER CODE END 2 */
-	//APPE_Init();
+	APPE_Init();
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
-		//SCH_Run(~0);
+		SCH_Run(~0);
 		vReadSensorData();
 		//vOledBlePrintGSR((float)uiGetGSRHumanResistance());
 		//HAL_Delay(8);
@@ -414,7 +442,7 @@ static void MX_ADC1_Init(void) {
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	hadc1.Init.LowPowerAutoWait = DISABLE;
 	hadc1.Init.ContinuousConvMode = DISABLE;
-	hadc1.Init.NbrOfConversion = 2;
+	hadc1.Init.NbrOfConversion = 1;
 	hadc1.Init.DiscontinuousConvMode = DISABLE;
 	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
 	hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;

@@ -95,6 +95,10 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 		switch (blue_evt->ecode) {
 		case EVT_BLUE_GATT_ATTRIBUTE_MODIFIED: {
 			attribute_modified = (aci_gatt_attribute_modified_event_rp0*) blue_evt->data;
+			if(attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyDataCharHdle + 1)){
+				vOledBleClearScreen();
+				ucOledStatusFlag = attribute_modified->Attr_Data[0];
+			}
 			if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle + 2)) {
 
 				/**
@@ -215,12 +219,15 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 					APP_DBG_MSG("-- Data : Data  char notification enabled\n");
 					Notification.SMART_WATCH_Evt_Opcode = SMART_WATCH_STM_NOTIFY_ENABLED_EVT;
 					vOledBleClearScreen();
+					ucOledStatusFlag = OLED_STATUS_BLE;
 					SMART_WATCH_STM_App_Notification_Data(&Notification);
+
 				} else {
 					APP_DBG_MSG("-- GATT : Data  char notification disabled\n");
 					vOledBleClearScreen();
-					LCD_Print("SELECT", "CHARACTER");
+					ucOledStatusFlag = OLED_STATUS_DEF;
 					Notification.SMART_WATCH_Evt_Opcode = 	SMART_WATCH_STM_NOTIFY_DISABLED_EVT;
+					vOledBleClearScreen();
 					SMART_WATCH_STM_App_Notification_Data(&Notification);
 				}
 			}
@@ -403,7 +410,7 @@ void SVCCTL_InitSmartWatchSvc(void) {
 	COPY_SMART_WATCH_DATA_UUID(uuid16.Char_UUID_128);
 	aci_gatt_add_char(aSmartWatchContext.SmartWatchSvcHdle,
 	UUID_TYPE_128, &uuid16, 450,
-	CHAR_PROP_NOTIFY ,
+	CHAR_PROP_NOTIFY | CHAR_PROP_WRITE,
 	ATTR_PERMISSION_NONE,
 	GATT_NOTIFY_ATTRIBUTE_WRITE, /* gattEvtMask */
 	10, /* encryKeySize */

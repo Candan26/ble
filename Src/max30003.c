@@ -201,7 +201,7 @@ void vMax30003ReadData(void) {
 	const int EINT_STATUS_MASK = 1 << 23;
     const int RTOR_STATUS =  1 << 10;
     const int RTOR_REG_OFFSET = 10;
-    const float RTOR_LSB_RES = 0.078125f;
+    const float RTOR_LSB_RES = 0.0078125f;
 	const int FIFO_OVF_MASK = 0x7;
 	const int FIFO_VALID_SAMPLE_MASK = 0x0;
 	const int FIFO_FAST_SAMPLE_MASK = 0x1;

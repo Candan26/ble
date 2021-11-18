@@ -32,7 +32,7 @@ unsigned short usBpmPosY;
 
 int postorier = 15;
 int percentageOfReduction = 5;
-uint32_t maxRangeOfGSR = 1024;
+uint32_t maxRangeOfGSR = 512;
 
 uint8_t point_x = 0;
 uint8_t point_y = 0;
@@ -417,12 +417,12 @@ void vOledBlePrintData() {
 	SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
 	SSD1306_GotoXY(40, 14);
 	if (iCharCounter == 0) {
-		SSD1306_Puts((unsigned char*) "*", &Font_11x18, SSD1306_COLOR_WHITE);
+		SSD1306_Puts((const char*) "*", &Font_11x18, SSD1306_COLOR_WHITE);
 	} else if (iCharCounter == 1) {
-		SSD1306_Puts((unsigned char*) "**", &Font_11x18, SSD1306_COLOR_WHITE);
+		SSD1306_Puts((const char*) "**", &Font_11x18, SSD1306_COLOR_WHITE);
 	} else if (iCharCounter == 2) {
 		iCharCounter = -1;
-		SSD1306_Puts((unsigned char*) "***", &Font_11x18, SSD1306_COLOR_WHITE);
+		SSD1306_Puts((const char*) "***", &Font_11x18, SSD1306_COLOR_WHITE);
 	}
 	SSD1306_UpdateScreen();
 	iCharCounter++;
@@ -455,8 +455,9 @@ void vOledBlePrintGSR(float gsr) {
 
 	SSD1306_DrawFilledRectangle(0, 0, 10, 32, SSD1306_COLOR_BLACK);
 	memset(tempLcdBuffer, 0, LCD_BUFFER_LENGHT);
+	memset(tempBufer, 0, 10);
 	sprintf(tempLcdBuffer, (char *) "GSR: ");
-	sprintf(tempBufer, "%d", iGsr);
+	sprintf(tempBufer, "%4d", iGsr);
 	strcat(tempLcdBuffer, tempBufer);
 	SSD1306_GotoXY(0, 0);
 	gsr = (gsr / maxRangeOfGSR) * 0xFF;
@@ -579,6 +580,22 @@ void vOledBlePrintTemperature(float temperature) {
 	SSD1306_UpdateScreen();
 }
 
+void vOledBlePrintSi7021(float temperature, float humidity) {
+	memset(tempLcdBuffer, 0, LCD_BUFFER_LENGHT);
+	SSD1306_Fill(SSD1306_COLOR_BLACK);
+	sprintf(tempLcdBuffer, (char *) "Temp: ");
+	floatToUcharArray(temperature, &tempLcdBuffer[6]);
+	SSD1306_GotoXY(7, 8);
+	SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+	memset(tempLcdBuffer, 0, LCD_BUFFER_LENGHT);
+	sprintf(&tempLcdBuffer[0], (char *) "Humidity: ");
+	floatToUcharArray(humidity, &tempLcdBuffer[10]);
+	SSD1306_GotoXY(7, 22);
+	strcat(tempLcdBuffer, "%");
+	SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
+
+	SSD1306_UpdateScreen();
+}
 
 void vOledBlePrintHumidity(float humidity) {
 	memset(tempLcdBuffer, 0, LCD_BUFFER_LENGHT);

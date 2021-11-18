@@ -29,6 +29,7 @@ void vOledBlePrintLux(uint32_t lux);
 void vOledBlePrintMax30102(uint8_t hr, uint8_t spo2, uint16_t diff);
 void vOledBlePrintTemperature(float temperature);
 void vOledBlePrintHumidity(float humidity);
+void vOledBlePrintSi7021(float temperature, float humidity);
 void vOledBlePrintGSR(float gsr);
 void vOledBlePrintData(void);
 

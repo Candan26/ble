@@ -93,6 +93,8 @@ volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 volatile uint32_t uiTimer16Counter = 0;
 volatile uint8_t ucHRSensorReadFlag =0;
 volatile uint8_t ecgFIFOIntFlag = 0;
+uint8_t ucOledStatusFlag = 0;
+uint8_t ucPrintCounter=0;
 
 unsigned int ADC_TIMEOUT = 300;
 unsigned char ucIsResponseFinished = 1;
@@ -138,7 +140,7 @@ void prsCheckAI() {
 #ifdef DEBUG_GSR
 
 	uint32_t val = (unsigned int)dCalculateKalmanDataSet((double)uiGetGSRHumanResistance());
-	printSensorData(val);
+	vPrintSensorData(val);
 	/*
 	groveGsrCounter++;
 	groveVal = groveVal + uiGetGSRHumanResistance();
@@ -181,7 +183,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			//vMax30102ReadData();
 		}
 		*/
-		prsCheckAI();
+		//prsCheckAI();
 		ucHRSensorReadFlag = 1;
 	}
 }
@@ -198,7 +200,7 @@ void initTimer() {
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 	//timer 4 for uart packet checking with 10 ms interval for 32 mHz
 	htim16.Instance = TIM16;
-	htim16.Init.Prescaler = 20;//4
+	htim16.Init.Prescaler = 4;//4
 	htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim16.Init.Period = 63999;
 	HAL_TIM_Base_Init(&htim16);
@@ -259,7 +261,7 @@ void vSetAdcChannel(uint32_t adcChannel){
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
 	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-		Error_Handler();
+		//Error_Handler();
 	}
 }
 
@@ -270,15 +272,55 @@ void vReadSensorData(void){
 		vMax30102ReadData();
 		ucHRSensorReadFlag=0;
 		HAL_ADC_Start_DMA(&hadc1,&uiGSRRawData,1);
+		vShowOledScreenProcess(ucOledStatusFlag);
 	}
 
 }
 
-void printSensorData(uint32_t data){
+void vPrintSensorData(uint32_t data){
 	unsigned char text[20];
-	sprintf((char*)text,"%6d\r\n",data);
+	sprintf((char*)text,"%6d\r\n",(int)data);
 	HAL_UART_Transmit(&huart1,text,8,300);
 	memset(text,0,20);
+}
+
+void vShowOledScreenProcess(uint8_t status) {
+	if (status == OLED_STATUS_DEF) {
+		ucPrintCounter = 0;
+	} else if (status == OLED_STATUS_GSR) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_GSR) {
+			vOledBlePrintGSR((float) uiGetGSRHumanResistance());
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_MAX30003) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_MAX30003) {
+			int j = 0;
+			for (j = 0; j < mMax3003Sensor.usEcgCounter; j++) {
+				vOledBlePrintMax30003(mMax3003Sensor.usaEcgVal[j],
+						mMax3003Sensor.faBpm[0], mMax3003Sensor.uiaRorVal[0]);
+			}
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_MAX30102) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_MAX30102) {
+			vOledBleMaxInit30102();
+			vOledBlePrintMax30102(ucGetMax30102HR(), ucGetMax30102SPO2(),
+					usGetMax30102Diff());
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_SI7021) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT) {
+			vOledBlePrintSi7021(mSi7021Sensor.fTemperature, mSi7021Sensor.fHumidty);
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_BLE) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT) {
+			vOledBlePrintData();
+			ucPrintCounter = 0;
+		}
+
+	}
+	ucPrintCounter++;
 }
 
 
@@ -335,7 +377,7 @@ void printSensorData(uint32_t data){
 		/* USER CODE BEGIN 3 */
 		SCH_Run(~0);
 		vReadSensorData();
-		//vOledBlePrintGSR((float)uiGetGSRHumanResistance());
+		//
 		//HAL_Delay(8);
 	}
 	/* USER CODE END 3 */

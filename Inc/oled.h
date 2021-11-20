@@ -32,6 +32,7 @@ void vOledBlePrintHumidity(float humidity);
 void vOledBlePrintSi7021(float temperature, float humidity);
 void vOledBlePrintGSR(float gsr);
 void vOledBlePrintData(void);
+void vOledBleClearScreen(void);
 
 // Sensor related
 

@@ -93,7 +93,7 @@ volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 volatile uint32_t uiTimer16Counter = 0;
 volatile uint8_t ucHRSensorReadFlag =0;
 volatile uint8_t ecgFIFOIntFlag = 0;
-uint8_t ucOledStatusFlag = 0;
+uint8_t ucOledStatusFlag = 7;
 uint8_t ucPrintCounter=0;
 
 unsigned int ADC_TIMEOUT = 300;
@@ -200,7 +200,7 @@ void initTimer() {
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 	//timer 4 for uart packet checking with 10 ms interval for 32 mHz
 	htim16.Instance = TIM16;
-	htim16.Init.Prescaler = 4;//4
+	htim16.Init.Prescaler = 20;//4
 	htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim16.Init.Period = 63999;
 	HAL_TIM_Base_Init(&htim16);
@@ -287,7 +287,11 @@ void vPrintSensorData(uint32_t data){
 void vShowOledScreenProcess(uint8_t status) {
 	if (status == OLED_STATUS_DEF) {
 		ucPrintCounter = 0;
-	} else if (status == OLED_STATUS_GSR) {
+	}else if (status == OLED_STATUS_SHUT_DOWN){
+		ucPrintCounter = 0;
+		vOledBleClearScreen();
+	}
+	else if (status == OLED_STATUS_GSR) {
 		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_GSR) {
 			vOledBlePrintGSR((float) uiGetGSRHumanResistance());
 			ucPrintCounter = 0;

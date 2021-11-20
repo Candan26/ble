@@ -122,10 +122,12 @@ void Error_Handler(void);
 #define OLED_STATUS_MAX30102 3
 #define OLED_STATUS_MAX30003 4
 #define OLED_STATUS_BLE  5
+#define OLED_STATUS_SHUT_DOWN 6
 #define OLED_COUNTER_TIME_OUT  10
 #define OLED_COUNTER_TIME_OUT_GSR 2
 #define OLED_COUNTER_TIME_OUT_MAX30102 3
 #define OLED_COUNTER_TIME_OUT_MAX30003 3
+
 void vSetAd8232AnalogValue(unsigned int value);
 void vSetAdcChannel(uint32_t adcChannel);
 void vSetGSRAnalogValue(uint32_t value);

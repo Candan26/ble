@@ -593,11 +593,11 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 		value[OFFSET_DATA_LUX+3-i] = tmpVal.uc[i];
 		*/
 	// print lcd
-	ucPrintCounter++;
-	if(ucPrintCounter>=5){
-		vOledBlePrintData();
-		ucPrintCounter=0;
-	}
+//	ucPrintCounter++;
+//	if(ucPrintCounter>=5){
+//		vOledBlePrintData();
+//		ucPrintCounter=0;
+//	}
 	SMART_WATCH_STM_App_Update_Char(SWITCH_DATA, (uint8_t *) &value);
 }
 

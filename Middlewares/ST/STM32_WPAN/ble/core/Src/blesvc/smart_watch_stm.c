@@ -98,6 +98,10 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 			if(attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyDataCharHdle + 1)){
 				vOledBleClearScreen();
 				ucOledStatusFlag = attribute_modified->Attr_Data[0];
+				vOledBleClearScreen();
+				if(ucOledStatusFlag == OLED_STATUS_MAX30102){
+					vMax30102Init();
+				}
 			}
 			if (attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyEGRCharHdle + 2)) {
 

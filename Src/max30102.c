@@ -198,7 +198,7 @@ void  vMax30102StartUp(void) {
 		i2c_write(MAX30102_ADDR_WRITE,RES_MODE_CONFIGURATION,&data,1);
     //HAL_I2C_Mem_Write(&max1002I2c, MAX30102_ADDR_WRITE, RES_MODE_CONFIGURATION, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
 }
-
+long lastBeat = 0; //Time at which the last beat occurred
 void vMax30102ReadData(void) {
 
 	if (HAL_GPIO_ReadPin(MAX30102_INT_GPIO_Port, MAX30102_INT_Pin)	== GPIO_PIN_RESET) {
@@ -236,6 +236,13 @@ void vMax30102ReadData(void) {
 				mMax30102Sensor.ucSPO2 = (uint8_t) (129.64 - 54 * R);
 			//????,30-250ppm  count:200-12
 			mMax30102Sensor.usDiff = last_iRed - sampleBuffTemp[i].iRed;
+			// bpm temp
+			if (ucCheckForBeat(sampleBuffTemp[i].iRed)){
+				  long delta = HAL_GetTick() - lastBeat;                   //Measure duration between two beats
+				    lastBeat = HAL_GetTick();
+				mMax30102Sensor.ucHR  = 60 / (delta / 1000.0);
+			}
+			// bpm temp
 			if (mMax30102Sensor.usDiff > 50 && eachBeatSampleCount > 12) {
 				for (ii = 9; ii > 0; ii--)
 					lastTenBeatSampleCount[i] = lastTenBeatSampleCount[i - 1];
@@ -243,8 +250,7 @@ void vMax30102ReadData(void) {
 				uint32_t totalTime = 0;
 				for (ii = 0; ii < 10; ii++)
 					totalTime += lastTenBeatSampleCount[i];
-				mMax30102Sensor.ucHR = (uint8_t) (60.0 * 10 / 0.02
-						/ ((float) totalTime));
+				//mMax30102Sensor.ucHR = (uint8_t) (60.0 * 10 / 0.02	/ ((float) totalTime));
 				eachBeatSampleCount = 0;
 			}
 			last_iRed = sampleBuffTemp[i].iRed;

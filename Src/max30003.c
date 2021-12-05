@@ -258,7 +258,7 @@ void vMax30003ReadData(void) {
 				mMax3003Sensor.usaEcgVal[mMax3003Sensor.usEcgCounter]=ecgSample[idx];
 				mMax3003Sensor.usEcgCounter++;
 #ifdef DEBUG_ECG
-				printSensorData(ecgSample[idx]);
+				vPrintSensorData(ecgSample[idx]);
 #endif
 
 				if(mMax3003Sensor.usEcgCounter>=160){

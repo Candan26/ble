@@ -73,13 +73,9 @@ void vReadHumidity() {
 	}
 	status = HAL_I2C_Master_Receive(&hi2csi7021, mSi7021Sensor.ucI2cAddr, ucaResponse, 3, 15);
 	if(status == HAL_OK){
-		uint16_t hum = ucaResponse[0] << 8 | ucaResponse[1];
+		uint32_t hum = (ucaResponse[0] << 8) + ucaResponse[1];
 		mSi7021Sensor.ucChecksumHum = ucaResponse[2];
-
-		mSi7021Sensor.fHumidty = hum;
-		mSi7021Sensor.fHumidty *= 125;
-		mSi7021Sensor.fHumidty /= 0xFFFF;
-		mSi7021Sensor.fHumidty -= 6;
+		mSi7021Sensor.fHumidty = (float)(((125.0 * hum) / 65536.0) - 6.0);
 
 		mSi7021Sensor.fHumidty = mSi7021Sensor.fHumidty > 100.0 ? 100.0 : mSi7021Sensor.fHumidty;
 		mSi7021Sensor.ucSeqNumber=SEQ_NO_SEND;
@@ -102,13 +98,11 @@ void vReadTemparature(){
 	}
 	status = HAL_I2C_Master_Receive(&hi2csi7021, mSi7021Sensor.ucI2cAddr, ucaResponse, 3, 15);
 	if(status == HAL_OK){
-		uint16_t temp = ucaResponse[0] << 8 | ucaResponse[1];
+		uint32_t temp = (ucaResponse[0] << 8) + ucaResponse[1];
 		mSi7021Sensor.ucChecksumTemp = ucaResponse[2];
 
 		mSi7021Sensor.fTemperature=temp;
-		mSi7021Sensor.fTemperature *= 175.72;
-		mSi7021Sensor.fTemperature /= 0xFFFF;
-		mSi7021Sensor.fTemperature -= 46.85;
+		mSi7021Sensor.fTemperature =(float)(((175.72 * temp) / 65536.0) - 46.85);
 
 		mSi7021Sensor.ucSeqNumber=SEQ_NO_SEND;
 		mSi7021Sensor.ucTempOrHumidty='H';
@@ -123,7 +117,7 @@ unsigned char vInitsi7021() {
 	unsigned char ucaSend[1];
 	unsigned char ucaResponse[1];
 	mSi7021Sensor.ucI2cAddr = ADDRESS_OF_SI7021;
-	mSi7021Sensor.ucSeqNumber=SEQ_NO_SEND;
+	mSi7021Sensor.ucSeqNumber = SEQ_NO_SEND;
 	mSi7021Sensor.ucTempOrHumidty='H';
 	ucaSend[0] = SI7021_READRHT_REG_CMD;
 	HAL_I2C_Master_Transmit(&hi2csi7021, mSi7021Sensor.ucI2cAddr, ucaSend, 	1, 15);

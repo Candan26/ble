@@ -3,7 +3,7 @@
 // local functions
 static int16_t susAverageDCEstimator(int32_t *p, uint16_t x);
 static int16_t susLowPassFIRFilter(int16_t din);
-static int32_t suiMul16(int16_t x, int16_t y);
+//static int32_t suiMul16(int16_t x, int16_t y);
 static int32_t siMul16(int16_t x, int16_t y);
 // local declerations
 uint8_t offset = 0;

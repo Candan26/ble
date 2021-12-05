@@ -101,8 +101,12 @@ typedef struct {
 #define OFFSET_DATA_SPO2 OFFSET_DATA_HR+1
 #define OFFSET_DATA_IRED OFFSET_DATA_SPO2+1
 #define OFFSET_DATA_RED OFFSET_DATA_IRED+4
-#define OFFSET_DATA_RR OFFSET_DATA_RED+4
-#define OFFSET_DATA_ECG OFFSET_DATA_RR+4
+#define OFFSET_DATA_RR_COUNTER OFFSET_DATA_RED+4
+#define OFFSET_DATA_RR OFFSET_DATA_RR_COUNTER+1
+#define OFFSET_DATA_BPM_COUNTER OFFSET_DATA_RR+20
+#define OFFSET_DATA_BPM OFFSET_DATA_BPM_COUNTER+1
+#define OFFSET_DATA_ECG_COUNTER OFFSET_DATA_BPM+20
+#define OFFSET_DATA_ECG OFFSET_DATA_ECG_COUNTER+2
 
 //#define OFFSET_DATA_LUX OFFSET_DATA_RR+4
 
@@ -127,12 +131,12 @@ PLACE_IN_SECTION("BLE_APP_CONTEXT") static SMART_WATCH_App_Context_t SMART_WATCH
 /* Private functions ---------------------------------------------------------*/
 static void SMART_WATCH_context_Init(void);
 static void SMART_WATCH_Send_Notification_Task(void);
-static void SMART_WATCH_EGR_Timer_Callback(void);
-static void SMART_WATCH_Temperature_Timer_Callback(void);
-static void SMART_WATCH_Humidity_Timer_Callback(void);
+//static void SMART_WATCH_EGR_Timer_Callback(void);
+//static void SMART_WATCH_Temperature_Timer_Callback(void);
+//static void SMART_WATCH_Humidity_Timer_Callback(void);
 //static void SMART_WATCH_LUX_Timer_Callback(void);
-static void SMART_WATCH_GSR_Timer_Callback(void);
-static void SMART_WATCH_HR_Timer_Callback(void);
+//static void SMART_WATCH_GSR_Timer_Callback(void);
+//static void SMART_WATCH_HR_Timer_Callback(void);
 //static void SMART_WATCH_SPO2_Timer_Callback(void);
 static void SMART_WATCH_DATA_Timer_Callback(void);
 /* Public functions ----------------------------------------------------------*/
@@ -287,17 +291,18 @@ void SMART_WATCH_STM_App_Notification_Data(SMART_WATCH_STM_App_Notification_evt_
 
 void SMART_WATCH_APP_Init(void) {
 	/* Register task used to update the characteristic (send the notification) */
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_EGR,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_HUMIDITY,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_EGR,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_TEMPERATURE,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_HUMIDITY,SMART_WATCH_Send_Notification_Task);
 	//SCH_RegTask(CFG_MY_TASK_NOTIFY_LUX,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_GSR,SMART_WATCH_Send_Notification_Task);
-	SCH_RegTask(CFG_MY_TASK_NOTIFY_HR,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_GSR,SMART_WATCH_Send_Notification_Task);
+	//SCH_RegTask(CFG_MY_TASK_NOTIFY_HR,SMART_WATCH_Send_Notification_Task);
 	//SCH_RegTask(CFG_MY_TASK_NOTIFY_SPO2,SMART_WATCH_Send_Notification_Task);
 	SCH_RegTask(CFG_MY_TASK_NOTIFY_DATA,SMART_WATCH_Send_Notification_Task);
 	/* Create timer to change the Temperature and update charecteristic */
 	//initilizing ble timers
 	APP_DBG_MSG("Initializing BLE timers \n");
+	/*
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_Temparature_Id),
 	      hw_ts_Repeated,
@@ -321,7 +326,7 @@ void SMART_WATCH_APP_Init(void) {
 	      hw_ts_Repeated,
 		  SMART_WATCH_LUX_Timer_Callback);
 	APP_DBG_MSG("LUX soft BLE timer created \n");
-*/
+
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_GSR_Id),
 	      hw_ts_Repeated,
@@ -334,6 +339,7 @@ void SMART_WATCH_APP_Init(void) {
 	      hw_ts_Repeated,
 		  SMART_WATCH_HR_Timer_Callback);
 	APP_DBG_MSG("HRt BLE timer created \n");
+	*/
 /*
 	HW_TS_Create(CFG_TIM_PROC_ID_ISR,
 	      &(SMART_WATCH_App_Context.ucUpdate_SPO2_Id),
@@ -358,6 +364,7 @@ void SMART_WATCH_APP_Init(void) {
  * LOCAL FUNCTIONS
  *
  *************************************************************/
+/*
 static void SMART_WATCH_Humidity_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
@@ -405,7 +412,8 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 	sucPrintCounter++;
 	for(i=0;i<4;i++)
 		value[OFFSET_EGR_ECG + 3-i] = tmpVal.uc[i];
-
+/*
+ * TODO correct this char later
 	tmpVal.ui = uiGetMax3003RR();
 	for(i=0;i<4;i++)
 		value[OFFSET_EGR_RR + 3-i] = tmpVal.uc[i];
@@ -414,7 +422,8 @@ static void SMART_WATCH_EGR_Timer_Callback(void) {
 		vOledBlePrintMax30003(uiGetMax3003ECG(),uiGetMax3003HR(), uiGetMax3003RR()); // TODO correct this line
 		sucPrintCounter=0;
 	}
-
+*/
+/*
 	SMART_WATCH_STM_App_Update_Char(SWITCH_EGR, (uint8_t *) &value);
 }
 /*
@@ -431,6 +440,7 @@ static void SMART_WATCH_LUX_Timer_Callback(void) {
 	SMART_WATCH_STM_App_Update_Char(SWITCH_LUX, (uint8_t *) &value);
 }
 */
+/*
 static void SMART_WATCH_GSR_Timer_Callback(void){
 	static unsigned char value[4];
 	unionTypeDef tmpVal;
@@ -499,7 +509,7 @@ static void SMART_WATCH_SPO2_Timer_Callback(void){
 */
 
 static void SMART_WATCH_DATA_Timer_Callback(void){
-	static unsigned char value[60];
+	static unsigned char value[512];
 	unionTypeDef tmpVal;
 	int i =0;
 	static unsigned char ucPrintCounter=0;
@@ -533,24 +543,48 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_IRED+3-i] = tmpVal.uc[i];
 
-	//get max30102 IRed data
+	//get max30102 Red data
 	tmpVal.ui = uiGetMax30102Red();
 	for(i=0;i<4;i++)
 		value[OFFSET_DATA_RED+3-i] = tmpVal.uc[i];
 
 	//get max3003 RR data
-	tmpVal.ui = uiGetMax3003RR();
-	for(i=0;i<4;i++)
-		value[OFFSET_DATA_RR+3-i] = tmpVal.uc[i];
+	tmpVal.ui = mMax3003Sensor.ucRorCounter%0xFF;
+	for(i=0;i<1;i++)
+		value[OFFSET_DATA_RR_COUNTER-i] = tmpVal.uc[i];
+	int j = 0;
+	for(j = 0 ; j< 5 ; j++){
+		tmpVal.ui = mMax3003Sensor.uiaRorVal[j];
+		for(i=0;i<4;i++)
+			value[OFFSET_DATA_RR+(j*4)+(3-i)] = tmpVal.uc[i];
+		mMax3003Sensor.uiaRorVal[j]=0;
+	}
+	mMax3003Sensor.ucRorCounter=0;
+
+	//get max3003 BPM data
+	tmpVal.ui = mMax3003Sensor.ucBpmCounter%0xFF;
+	for(i=0;i<1;i++)
+		value[OFFSET_DATA_BPM_COUNTER-i] = tmpVal.uc[i];
+	for(j = 0 ; j< 5 ; j++){
+		tmpVal.f = mMax3003Sensor.faBpm[j];
+		for(i=0;i<4;i++)
+			value[OFFSET_DATA_BPM+(j*4)+(3-i)] = tmpVal.uc[i];
+		mMax3003Sensor.faBpm[j]=0;
+	}
+	mMax3003Sensor.ucBpmCounter=0;
 
 	//get max3003 ECG data
-	int j=0;
-	for(i=0;i<15;i++){
-		tmpVal.ui =  mMax3003Sensor.usaDataPacketHeader[i]%0xFFFF;
+	tmpVal.ui = mMax3003Sensor.usEcgCounter%0xFFFF;
+	for(i=0;i<2;i++)
+		value[OFFSET_DATA_ECG_COUNTER-i] = tmpVal.uc[i];
+	for(i=0;i<160;i++){
+		tmpVal.ui =  mMax3003Sensor.usaEcgVal[i]%0xFFFF;
 		for(j=0;j<2;j++)
 			value[(OFFSET_DATA_ECG + i*2)+1-j] = tmpVal.uc[j];
+		 mMax3003Sensor.usaEcgVal[i] = 0; // Reset data after sending
 	}
-
+	 mMax3003Sensor.usEcgCounter=0;
+	//TODO  reset data after send
 
 	//get lux data
 	/*
@@ -559,11 +593,11 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 		value[OFFSET_DATA_LUX+3-i] = tmpVal.uc[i];
 		*/
 	// print lcd
-	ucPrintCounter++;
-	if(ucPrintCounter>=5){
-		vOledBlePrintData();
-		ucPrintCounter=0;
-	}
+//	ucPrintCounter++;
+//	if(ucPrintCounter>=5){
+//		vOledBlePrintData();
+//		ucPrintCounter=0;
+//	}
 	SMART_WATCH_STM_App_Update_Char(SWITCH_DATA, (uint8_t *) &value);
 }
 

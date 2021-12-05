@@ -161,7 +161,7 @@
 /**
  * Maximum supported ATT_MTU size
  */
-#define CFG_BLE_MAX_ATT_MTU             (251)
+#define CFG_BLE_MAX_ATT_MTU             (512)
 
 /**
  * Size of the storage area for Attribute values
@@ -452,12 +452,12 @@ typedef enum
     CFG_TASK_HCI_ASYNCH_EVT_ID,
   CFG_IdleTask_Update_Parameter,
 /* USER CODE BEGIN CFG_Task_Id_With_HCI_Cmd_t */
-  CFG_MY_TASK_NOTIFY_EGR,
-  CFG_MY_TASK_NOTIFY_TEMPERATURE,
-  CFG_MY_TASK_NOTIFY_HUMIDITY,
+  //CFG_MY_TASK_NOTIFY_EGR,
+  //CFG_MY_TASK_NOTIFY_TEMPERATURE,
+  //CFG_MY_TASK_NOTIFY_HUMIDITY,
   //CFG_MY_TASK_NOTIFY_LUX,
-  CFG_MY_TASK_NOTIFY_GSR,
-  CFG_MY_TASK_NOTIFY_HR,
+  //CFG_MY_TASK_NOTIFY_GSR,
+  //CFG_MY_TASK_NOTIFY_HR,
   //CFG_MY_TASK_NOTIFY_SPO2,
   CFG_MY_TASK_NOTIFY_DATA,
 /* USER CODE END CFG_Task_Id_With_HCI_Cmd_t */

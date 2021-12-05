@@ -35,6 +35,8 @@
 #include "max30102.h"
 #include "max30003.h"
 #include "oled.h"
+#include <stdio.h>
+#include <string.h>
 //TODO Pars analog datas
 /* USER CODE END PTD */
 
@@ -59,6 +61,7 @@ RTC_HandleTypeDef hrtc;
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim16;
+TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim17;
 
 UART_HandleTypeDef huart1;
@@ -79,9 +82,10 @@ static void MX_RF_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM16_Init(void);
+static void MX_TIM1_Init(void);
 static void MX_TIM17_Init(void);
 /* USER CODE BEGIN PFP */
-volatile uint32_t uiGSRRawData=0;
+uint32_t uiGSRRawData=0;
 volatile static unsigned int uiAd8232AnalogConvertedValue = 0;
 volatile static unsigned char ucAd8232AnalogConvertedValue = 0;
 volatile static unsigned short usAd8232AnalogConvertedValue = 0;
@@ -89,6 +93,8 @@ volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 volatile uint32_t uiTimer16Counter = 0;
 volatile uint8_t ucHRSensorReadFlag =0;
 volatile uint8_t ecgFIFOIntFlag = 0;
+uint8_t ucOledStatusFlag = 7;
+uint8_t ucPrintCounter=0;
 
 unsigned int ADC_TIMEOUT = 300;
 unsigned char ucIsResponseFinished = 1;
@@ -123,6 +129,8 @@ volatile uint16_t usADCxConvertedData_Voltage_mVolt = 0; /* Value of voltage cal
 /*  2: ADC group regular unitary conversion has not been started yet          */
 /*     (initial state)                                                        */
 
+int groveGsrCounter = 0 ;
+long groveVal;
 void prsCheckAI() {
 	/* Init variable containing ADC conversion data */
 	uhADCxConvertedData = VAR_CONVERTED_DATA_INIT_VALUE;
@@ -132,6 +140,7 @@ void prsCheckAI() {
 
 #ifdef DEBUG_GSR
 	printSensorData(uiGetGSRHumanResistance());
+
 #endif
 	HAL_ADC_Start_IT(&hadc1);
 	/*
@@ -164,6 +173,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			//vMax30102ReadData();
 		}
 		*/
+		//prsCheckAI();
 		ucHRSensorReadFlag = 1;
 	}
 }
@@ -177,7 +187,7 @@ void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin )
 
 void initTimer() {
 	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 	//timer 4 for uart packet checking with 10 ms interval for 32 mHz
 	htim16.Instance = TIM16;
 	htim16.Init.Prescaler = 20;//4
@@ -207,7 +217,7 @@ void systemInit(void) {
 	//vMax30102Shutdown();
 	//HAL_Delay(15);
 	//tTsl2561Init();
-	//vInitKalman(KALMAN_FILTER_ACTIVATION_LEVEL,0,KALMAN_FILTER_DEFAULT_MIN_CRETERIA);
+	vInitKalman(KALMAN_FILTER_ACTIVATION_LEVEL,0,KALMAN_FILTER_DEFAULT_MIN_CRETERIA);
 
 }
 
@@ -241,7 +251,7 @@ void vSetAdcChannel(uint32_t adcChannel){
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
 	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-		Error_Handler();
+		//Error_Handler();
 	}
 }
 
@@ -252,16 +262,62 @@ void vReadSensorData(void){
 		vMax30102ReadData();
 		ucHRSensorReadFlag=0;
 		HAL_ADC_Start_DMA(&hadc1,&uiGSRRawData,1);
+		vShowOledScreenProcess(ucOledStatusFlag);
 	}
 
 }
 
-void printSensorData(uint32_t data){
+
+void vPrintSensorData(uint32_t data){
 	unsigned char text[20];
-	sprintf((char*)text,"%6d\r\n",data);
+	sprintf((char*)text,"%6d\r\n",(int)data);
 	HAL_UART_Transmit(&huart1,text,8,300);
 	memset(text,0,20);
 }
+
+void vShowOledScreenProcess(uint8_t status) {
+	if (status == OLED_STATUS_DEF) {
+		ucPrintCounter = 0;
+	}else if (status == OLED_STATUS_SHUT_DOWN){
+		ucPrintCounter = 0;
+		vOledBleClearScreen();
+	}
+	else if (status == OLED_STATUS_GSR) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_GSR) {
+			vOledBlePrintGSR((float) uiGetGSRHumanResistance());
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_MAX30003) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_MAX30003) {
+			int j = 0;
+			for (j = 0; j < mMax3003Sensor.usEcgCounter; j++) {
+				vOledBlePrintMax30003(mMax3003Sensor.usaEcgVal[j],
+						mMax3003Sensor.faBpm[0], mMax3003Sensor.uiaRorVal[0]);
+			}
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_MAX30102) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_MAX30102) {
+			vOledBleMaxInit30102();
+			vOledBlePrintMax30102(ucGetMax30102HR(), ucGetMax30102SPO2(),
+					usGetMax30102Diff());
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_SI7021) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT) {
+			vOledBlePrintSi7021(mSi7021Sensor.fTemperature, mSi7021Sensor.fHumidty);
+			ucPrintCounter = 0;
+		}
+	} else if (status == OLED_STATUS_BLE) {
+		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT) {
+			vOledBlePrintData();
+			ucPrintCounter = 0;
+		}
+
+	}
+	ucPrintCounter++;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -299,6 +355,7 @@ void printSensorData(uint32_t data){
 	MX_ADC1_Init();
 	MX_SPI1_Init();
 	MX_TIM16_Init();
+	MX_TIM1_Init();
 	MX_TIM17_Init();
 	/* USER CODE BEGIN 2 */
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
@@ -419,7 +476,7 @@ static void MX_ADC1_Init(void) {
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	hadc1.Init.LowPowerAutoWait = DISABLE;
 	hadc1.Init.ContinuousConvMode = DISABLE;
-	hadc1.Init.NbrOfConversion = 2;
+	hadc1.Init.NbrOfConversion = 1;
 	hadc1.Init.DiscontinuousConvMode = DISABLE;
 	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
 	hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -511,7 +568,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -554,6 +611,7 @@ static void MX_RF_Init(void) {
  */
 static void MX_RTC_Init(void) {
 
+
 	/* USER CODE BEGIN RTC_Init 0 */
 
 	/* USER CODE END RTC_Init 0 */
@@ -583,6 +641,86 @@ static void MX_RTC_Init(void) {
 	/* USER CODE BEGIN RTC_Init 2 */
 
 	/* USER CODE END RTC_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 9;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 97;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
+  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+  sBreakDeadTimeConfig.Break2Filter = 0;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -634,9 +772,9 @@ static void MX_TIM17_Init(void)
 
   /* USER CODE END TIM17_Init 1 */
   htim17.Instance = TIM17;
-  htim17.Init.Prescaler = 9;
+  htim17.Init.Prescaler = 97;
   htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim17.Init.Period = 97;
+  htim17.Init.Period = 9;
   htim17.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim17.Init.RepetitionCounter = 0;
   htim17.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -750,7 +888,7 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOB_CLK_ENABLE();
-	//__HAL_RCC_GPIOD_CLK_ENABLE();
+	__HAL_RCC_GPIOD_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
 	  HAL_GPIO_WritePin(GPIOC, SPI1_CS_Pin, GPIO_PIN_RESET);

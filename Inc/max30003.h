@@ -255,9 +255,12 @@ typedef struct {
 	volatile uint64_t ulRtor;
 	volatile uint64_t ulData;
 	volatile int64_t lEcgData;
-	volatile uint32_t uiHR;
-	volatile uint32_t uiRR;
-	volatile uint16_t usaDataPacketHeader[32];
+	volatile uint16_t usaEcgVal[160];
+	volatile uint16_t usEcgCounter;
+	volatile float faBpm[5];
+	volatile uint8_t ucBpmCounter;
+	volatile uint32_t uiaRorVal[5];
+	volatile uint8_t ucRorCounter;
 } typedef_max3003;
 
 extern volatile typedef_max3003 mMax3003Sensor;

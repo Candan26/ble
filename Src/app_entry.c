@@ -93,10 +93,12 @@ void APPE_Init( void )
 
 #if (CFG_DEBUG_APP_TRACE != 0)
   /* Don't use standard buffer (for proper DBG traces output) */
+
  // setbuf(stdout, NULL);
 
   /* Initialize the debug interface */
  // Init_Debug();
+
 #endif
 
 /* USER CODE END APPE_Init_1 */

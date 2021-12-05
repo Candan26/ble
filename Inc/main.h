@@ -111,11 +111,23 @@ void Error_Handler(void);
 #define LED_GREEN_GPIO_Port GPIOB
 #define LED_BLUE_Pin GPIO_PIN_5
 #define LED_BLUE_GPIO_Port GPIOB
-#define MAX30102_INT_Pin GPIO_PIN_11
-#define MAX30102_INT_GPIO_Port GPIOC
+#define MAX30102_INT_Pin GPIO_PIN_0
+#define MAX30102_INT_GPIO_Port GPIOD
 #define SPI1_CS_Pin GPIO_PIN_5
 #define SPI1_CS_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
+#define OLED_STATUS_DEF 0
+#define OLED_STATUS_SI7021 1
+#define OLED_STATUS_GSR 2
+#define OLED_STATUS_MAX30102 3
+#define OLED_STATUS_MAX30003 4
+#define OLED_STATUS_BLE  5
+#define OLED_STATUS_SHUT_DOWN 6
+#define OLED_COUNTER_TIME_OUT  10
+#define OLED_COUNTER_TIME_OUT_GSR 2
+#define OLED_COUNTER_TIME_OUT_MAX30102 3
+#define OLED_COUNTER_TIME_OUT_MAX30003 3
+
 void vSetAd8232AnalogValue(unsigned int value);
 void vSetAdcChannel(uint32_t adcChannel);
 void vSetGSRAnalogValue(uint32_t value);
@@ -123,11 +135,16 @@ unsigned char ucGetAd8232AnalogValue();
 unsigned int uiGetAd8232AnalogValue();
 unsigned short usGetAd8232AnalogValue();
 uint32_t uiGetGSRHumanResistance(void);
-void printSensorData(uint32_t data);
+
+void vPrintSensorData(uint32_t data);
+void vShowOledScreenProcess(uint8_t status);
+//#define DEBUG_ECG
+
 extern volatile uint8_t ecgFIFOIntFlag;
 extern I2C_HandleTypeDef hi2c3;
 extern UART_HandleTypeDef huart1;
 extern SPI_HandleTypeDef hspi1;
+extern uint8_t ucOledStatusFlag;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

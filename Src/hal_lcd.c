@@ -102,7 +102,7 @@ void LCD_PrintLabel(char * label)
 {
   SSD1306_DrawFilledRectangle(0,0,80,19,SSD1306_COLOR_BLACK);
   SSD1306_GotoXY(0,0);
-  SSD1306_Puts(label, &Font_11x18, SSD1306_COLOR_WHITE); 
+  SSD1306_Puts(label, &Font_11x18, SSD1306_COLOR_WHITE);
   SSD1306_UpdateScreen();
 }
 
@@ -111,7 +111,7 @@ void LCD_THREAD_PrintRLOC(uint16_t rloc)
   sprintf(tempLcdBuffer, "0x%04X", rloc);
   SSD1306_DrawFilledRectangle(80,20,52,12,SSD1306_COLOR_BLACK);
   SSD1306_GotoXY(82,22);
-  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE); 
+  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
   SSD1306_UpdateScreen();
 }
 
@@ -120,7 +120,7 @@ void LCD_THREAD_PrintPanId(uint16_t panId)
   sprintf(tempLcdBuffer, "0x%04X", panId);
   SSD1306_DrawFilledRectangle(80,0,52,20,SSD1306_COLOR_BLACK);
   SSD1306_GotoXY(82,7);
-  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE); 
+  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
   SSD1306_UpdateScreen();
 }
 
@@ -129,7 +129,7 @@ void LCD_THREAD_PrintRole(char * role)
   SSD1306_DrawFilledRectangle(0,20,80,12,SSD1306_COLOR_BLACK);
   SSD1306_DrawFilledRectangle(0,20,5 + (strlen(role) * 7),12,SSD1306_COLOR_WHITE);
   SSD1306_GotoXY(3,22);
-  SSD1306_Puts(role, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts(role, &Font_7x10, SSD1306_COLOR_BLACK);
   SSD1306_UpdateScreen();
 }
 
@@ -144,7 +144,7 @@ void LCD_BLE_PrintLocalName(const char * name)
 void LCD_BLE_PrintLogo(void)
 {
   uint16_t x, y;
-  
+
   for (y = 0; y < BLUETOOTH_LOGO_HEIGHT; y++)
   {
     for (x = 0; x < (BLUETOOTH_LOGO_WIDTH); x++)
@@ -160,7 +160,7 @@ void LCD_BLE_PrintStatus(char * status)
   SSD1306_DrawFilledRectangle(31,20,100,12,SSD1306_COLOR_BLACK);
   SSD1306_DrawFilledRectangle(31,20,5 + (strlen(status) * 7),12,SSD1306_COLOR_WHITE);
   SSD1306_GotoXY(34,22);
-  SSD1306_Puts(status, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts(status, &Font_7x10, SSD1306_COLOR_BLACK);
   SSD1306_UpdateScreen();
 }
 
@@ -169,7 +169,7 @@ void LCD_BLE_HRS_PrintBPM(uint8_t BPM)
   SSD1306_DrawFilledRectangle(0,20,80,12,SSD1306_COLOR_BLACK);
   //SSD1306_DrawFilledRectangle(0,20,5 + (strlen(role) * 7),12,SSD1306_COLOR_WHITE);
   SSD1306_GotoXY(3,22);
-  //SSD1306_Puts(role, &Font_7x10, SSD1306_COLOR_BLACK); 
+  //SSD1306_Puts(role, &Font_7x10, SSD1306_COLOR_BLACK);
   SSD1306_UpdateScreen();
 }
 
@@ -178,9 +178,9 @@ void LCD_BLE_HTS_PrintTemperature(uint8_t temperature)
   //sprintf(tempLcdBuffer, "#%02d", errId);
   SSD1306_DrawFilledRectangle(0,0,128,32,SSD1306_COLOR_WHITE);
   SSD1306_GotoXY(7,8);
-  SSD1306_Puts("ERROR", &Font_11x18, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts("ERROR", &Font_11x18, SSD1306_COLOR_BLACK);
   SSD1306_GotoXY(66,9);
-  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_BLACK);
   SSD1306_UpdateScreen();
 }
 
@@ -189,9 +189,9 @@ void LCD_BLE_TPS_PrintRSSI(uint8_t RSSI)
   //sprintf(tempLcdBuffer, "#%02d", errId);
   SSD1306_DrawFilledRectangle(0,0,128,32,SSD1306_COLOR_WHITE);
   SSD1306_GotoXY(7,8);
-  SSD1306_Puts("ERROR", &Font_11x18, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts("ERROR", &Font_11x18, SSD1306_COLOR_BLACK);
   SSD1306_GotoXY(66,9);
-  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_BLACK); 
+  SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_BLACK);
   SSD1306_UpdateScreen();
 }
 /* USER CODE END */

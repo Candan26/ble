@@ -137,19 +137,9 @@ void prsCheckAI() {
 	if (!ucIsResponseFinished)
 		return;
 	ucIsResponseFinished = 0;
-#ifdef DEBUG_GSR
 
-	uint32_t val = (unsigned int)dCalculateKalmanDataSet((double)uiGetGSRHumanResistance());
-	vPrintSensorData(val);
-	/*
-	groveGsrCounter++;
-	groveVal = groveVal + uiGetGSRHumanResistance();
-	if(groveGsrCounter>= 1 ){
-		printSensorData(groveVal/2);
-		groveVal=0;
-		groveGsrCounter = 0;
-	}
-	*/
+#ifdef DEBUG_GSR
+	printSensorData(uiGetGSRHumanResistance());
 
 #endif
 	HAL_ADC_Start_IT(&hadc1);
@@ -277,6 +267,7 @@ void vReadSensorData(void){
 
 }
 
+
 void vPrintSensorData(uint32_t data){
 	unsigned char text[20];
 	sprintf((char*)text,"%6d\r\n",(int)data);
@@ -326,7 +317,6 @@ void vShowOledScreenProcess(uint8_t status) {
 	}
 	ucPrintCounter++;
 }
-
 
 /* USER CODE END 0 */
 
@@ -381,8 +371,6 @@ void vShowOledScreenProcess(uint8_t status) {
 		/* USER CODE BEGIN 3 */
 		SCH_Run(~0);
 		vReadSensorData();
-		//
-		//HAL_Delay(8);
 	}
 	/* USER CODE END 3 */
 }

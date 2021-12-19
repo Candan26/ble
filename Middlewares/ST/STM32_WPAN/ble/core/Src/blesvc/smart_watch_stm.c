@@ -96,8 +96,9 @@ static SVCCTL_EvtAckStatus_t SmartWatch_Event_Handler(void *Event) {
 		case EVT_BLUE_GATT_ATTRIBUTE_MODIFIED: {
 			attribute_modified = (aci_gatt_attribute_modified_event_rp0*) blue_evt->data;
 			if(attribute_modified->Attr_Handle == (aSmartWatchContext.SmartWatchNotifyDataCharHdle + 1)){
-				vOledBleClearScreen();
-				ucOledStatusFlag = attribute_modified->Attr_Data[0];
+
+				ucOledStatusFlag = attribute_modified->Attr_Data[0] & 0x0F;// first 4 bit contains the number of screen
+				setActiveSensor(attribute_modified->Attr_Data[0] & 0xF0); // last 4 bit for the active sensor value
 				vOledBleClearScreen();
 				if(ucOledStatusFlag == OLED_STATUS_MAX30102){
 					vMax30102Init();

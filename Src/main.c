@@ -42,7 +42,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -91,10 +90,16 @@ volatile static unsigned char ucAd8232AnalogConvertedValue = 0;
 volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 
 volatile uint32_t uiTimer16Counter = 0;
-volatile uint8_t ucHRSensorReadFlag =0;
+volatile uint8_t ucSensorReadFlag =0;
 volatile uint8_t ecgFIFOIntFlag = 0;
 uint8_t ucOledStatusFlag = 7;
 uint8_t ucPrintCounter=0;
+
+uint8_t ucIsMax30102Active = 1;
+uint8_t ucIsMax30003Active = 1;
+uint8_t ucIsSi7021Active = 1;
+uint8_t ucIsSRActive = 1;
+
 
 unsigned int ADC_TIMEOUT = 300;
 unsigned char ucIsResponseFinished = 1;
@@ -162,19 +167,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM16) {
-		/*
-		uiTimer16Counter++; // counter for AD8232
-		if (uiTimer16Counter >= 9) {
-			uiTimer16Counter = 0;
-			//prsCheckAI();
-			//vSi7021ProcessHumidityAndTemperature();
-			//vTsl2561ProcessLuminity();
-			//vMax30003ReadData();
-			//vMax30102ReadData();
-		}
-		*/
-		//prsCheckAI();
-		ucHRSensorReadFlag = 1;
+		ucSensorReadFlag = 1;
 	}
 }
 
@@ -186,8 +179,8 @@ void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin )
 }
 
 void initTimer() {
-	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	//HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3); // for manuel clock
 	//timer 4 for uart packet checking with 10 ms interval for 32 mHz
 	htim16.Instance = TIM16;
 	htim16.Init.Prescaler = 20;//4
@@ -256,11 +249,11 @@ void vSetAdcChannel(uint32_t adcChannel){
 }
 
 void vReadSensorData(void){
-	if(ucHRSensorReadFlag == 1){
+	if(ucSensorReadFlag == 1){
 		vSi7021ProcessHumidityAndTemperature();
 		vMax30003ReadData();
 		vMax30102ReadData();
-		ucHRSensorReadFlag=0;
+		ucSensorReadFlag=0;
 		HAL_ADC_Start_DMA(&hadc1,&uiGSRRawData,1);
 		vShowOledScreenProcess(ucOledStatusFlag);
 	}
@@ -318,6 +311,34 @@ void vShowOledScreenProcess(uint8_t status) {
 	ucPrintCounter++;
 }
 
+
+void setActiveSensor(uint8_t data){
+	if((data >> MAX30003_BIT_POSITION) & 1U){
+		ucIsMax30003Active = 1;
+	}else {
+		ucIsMax30003Active = 0;
+	}
+
+	if((data >> MAX30102_BIT_POSITION) & 1U){
+		ucIsMax30102Active = 1;
+	}else {
+		ucIsMax30102Active = 0;
+	}
+
+	if((data >> SI7021_BIT_POSITION) & 1U){
+		ucIsSi7021Active=1;
+	}else {
+		ucIsSi7021Active=0;
+	}
+
+	if((data >> SR_BIT_POSITION) & 1U){
+		ucIsSRActive=1;
+	}else {
+		ucIsSRActive=0;
+	}
+
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -359,6 +380,9 @@ void vShowOledScreenProcess(uint8_t status) {
 	MX_TIM17_Init();
 	/* USER CODE BEGIN 2 */
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+
 	HAL_Delay(250);
 	systemInit();
 
@@ -470,7 +494,7 @@ static void MX_ADC1_Init(void) {
 	 */
 	hadc1.Instance = ADC1;
 	hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-	hadc1.Init.Resolution = ADC_RESOLUTION_8B;
+	hadc1.Init.Resolution = ADC_RESOLUTION_12B;
 	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
 	hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
@@ -568,7 +592,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

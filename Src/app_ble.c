@@ -477,7 +477,7 @@ void APP_BLE_Init( void )
   /**
    * Create timer to handle the Advertising Stop
    */
-  HW_TS_Create(CFG_TIM_PROC_ID_ISR, &(BleApplicationContext.Advertising_mgr_timer_Id), hw_ts_SingleShot, Adv_Cancel_Req);
+  //HW_TS_Create(CFG_TIM_PROC_ID_ISR, &(BleApplicationContext.Advertising_mgr_timer_Id), hw_ts_SingleShot, Adv_Cancel_Req);
   /**
    * Create timer to handle the Led Switch OFF
    */
@@ -564,7 +564,7 @@ SVCCTL_UserEvtFlowStatus_t SVCCTL_App_Notification( void *pckt )
            */
           connection_complete_event = (hci_le_connection_complete_event_rp0 *) meta_evt->data;
           
-          HW_TS_Stop(BleApplicationContext.Advertising_mgr_timer_Id);
+          //HW_TS_Stop(BleApplicationContext.Advertising_mgr_timer_Id);
 
 #if(CFG_DEBUG_APP_TRACE != 0)
           APP_DBG_MSG("EVT_LE_CONN_COMPLETE for connection handle 0x%x\n",
@@ -842,7 +842,7 @@ static void Adv_Request(APP_BLE_ConnStatus_t New_Status)
      * Stop the timer, it will be restarted for a new shot
      * It does not hurt if the timer was not running
      */
-    HW_TS_Stop(BleApplicationContext.Advertising_mgr_timer_Id);
+    //HW_TS_Stop(BleApplicationContext.Advertising_mgr_timer_Id);
 
 #if(CFG_DEBUG_APP_TRACE != 0)
     APP_DBG_MSG("First index in %d state \n",
@@ -889,10 +889,12 @@ static void Adv_Request(APP_BLE_ConnStatus_t New_Status)
     {
       if (New_Status == APP_BLE_FAST_ADV)
       {
+    	LCD_BLE_PrintLogo();
+    	LCD_BLE_PrintLocalName("WSMART");
     	LCD_BLE_PrintStatus("ADVERTISING");
         APP_DBG_MSG("Successfully Start Fast Advertising " );
         /* Start Timer to STOP ADV - TIMEOUT */
-        HW_TS_Start(BleApplicationContext.Advertising_mgr_timer_Id, INITIAL_ADV_TIMEOUT);
+        //HW_TS_Start(BleApplicationContext.Advertising_mgr_timer_Id, INITIAL_ADV_TIMEOUT);
       }
       else
       {
@@ -987,6 +989,7 @@ static void Adv_Cancel( void )
     BleApplicationContext.Device_Connection_Status = APP_BLE_IDLE;
     if (result == BLE_STATUS_SUCCESS)
     {
+    	vOledBleClearScreen();
     	LCD_BLE_PrintStatus("SLEEPING");
 #if(CFG_DEBUG_APP_TRACE != 0)
       APP_DBG_MSG("  \r\n\r");APP_DBG_MSG("** STOP ADVERTISING **  \r\n\r");

@@ -154,7 +154,7 @@ void vMax30003Init(void) {
 
 	CNFG_ECG_r.bits.dlpf = 1;       // Digital LPF cutoff = 40Hz
 	CNFG_ECG_r.bits.dhpf = 1;       // Digital HPF cutoff = 0.5Hz
-	CNFG_ECG_r.bits.gain = 2;       // ECG gain = 160V/V
+	CNFG_ECG_r.bits.gain = 3;       // ECG gain = 160V/V
 	CNFG_ECG_r.bits.rate = 2;       // Sample rate = 128 sps
 	max30003WriteRegister(CNFG_ECG, CNFG_ECG_r.all);
 
@@ -216,20 +216,20 @@ void vMax30003ReadData(void) {
 	if (ecgFIFOIntFlag) {
 		//reset data
 		ecgFIFOIntFlag = 0;
-		//uicounterOfReset = 0;
+		uicounterOfReset = 0;
 		status = max30003ReadRegister(STATUS);      // Read the STATUS register
 		// Check if EINT interrupt asserted
 
 		if ((status & RTOR_STATUS) == RTOR_STATUS) {
 			uint32_t tempRtor=0;
 			tempRtor = max30003ReadRegister(RTOR )>>  RTOR_REG_OFFSET;
-			mMax3003Sensor.faBpm[mMax3003Sensor.ucBpmCounter] = 1.0f / ( tempRtor * RTOR_LSB_RES / 60.0f );
+			mMax3003Sensor.faBpm[0] = 1.0f / ( tempRtor * RTOR_LSB_RES / 60.0f );
 			mMax3003Sensor.ucBpmCounter++;
 			if(mMax3003Sensor.ucBpmCounter>=5){
 				mMax3003Sensor.ucBpmCounter=0;
 			}
 
-			mMax3003Sensor.uiaRorVal[mMax3003Sensor.ucRorCounter] = tempRtor;
+			mMax3003Sensor.uiaRorVal[0] = tempRtor;
 			mMax3003Sensor.ucRorCounter++;
 			if(mMax3003Sensor.ucRorCounter>=5){
 				mMax3003Sensor.ucRorCounter=0;
@@ -267,7 +267,7 @@ void vMax30003ReadData(void) {
 
 			}
 		}
-	}else{
+	else{
 		uicounterOfReset++;
 	}
 }

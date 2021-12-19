@@ -462,7 +462,7 @@ void vOledBlePrintGSR(float gsr) {
 	SSD1306_GotoXY(0, 0);
 	gsr = (gsr / maxRangeOfGSR) * 0xFF;
 	SSD1306_Puts(tempLcdBuffer, &Font_7x10, SSD1306_COLOR_WHITE);
-	usBpmPosY = postorier + (gsr * (0.2509) / percentageOfReduction); //60-(analogValue/10);
+	usBpmPosY = postorier + (gsr * (0.7509) / percentageOfReduction); //60-(analogValue/10);
 	SSD1306_DrawLine(usBpmPoslastX, usBpmPoslastY, usBpmPosX, usBpmPosY,
 			SSD1306_COLOR_WHITE);
 	SSD1306_UpdateScreen();

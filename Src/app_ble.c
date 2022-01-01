@@ -889,6 +889,8 @@ static void Adv_Request(APP_BLE_ConnStatus_t New_Status)
     {
       if (New_Status == APP_BLE_FAST_ADV)
       {
+    	LCD_BLE_PrintLogo();
+    	LCD_BLE_PrintLocalName("WSMART");
     	LCD_BLE_PrintStatus("ADVERTISING");
         APP_DBG_MSG("Successfully Start Fast Advertising " );
         /* Start Timer to STOP ADV - TIMEOUT */
@@ -987,6 +989,7 @@ static void Adv_Cancel( void )
     BleApplicationContext.Device_Connection_Status = APP_BLE_IDLE;
     if (result == BLE_STATUS_SUCCESS)
     {
+    	vOledBleClearScreen();
     	LCD_BLE_PrintStatus("SLEEPING");
 #if(CFG_DEBUG_APP_TRACE != 0)
       APP_DBG_MSG("  \r\n\r");APP_DBG_MSG("** STOP ADVERTISING **  \r\n\r");

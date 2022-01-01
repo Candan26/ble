@@ -16,7 +16,6 @@
 
 volatile typedef_max3003 mMax3003Sensor;
 //local function prototypes
-void vMax30003SoftwareReset();
 void vMax30003RegWrite(uint8_t addrs, uint64_t data);
 void vMax30003Synch();
 void vMax30003RegRead(uint8_t addrs, uint8_t *data_buffer);
@@ -31,9 +30,6 @@ uint32_t uicounterOfReset = 0;
 uint32_t ecgFIFO, readECGSamples, idx, ETAG[32], status;
 int16_t ecgSample[32];
 // Local Function Definitions
-void vMax30003SoftwareReset() {
-	vMax30003RegWrite(SW_RST, 0x000000);
-}
 
 void vMax30003Synch() {
 	vMax30003RegWrite(SYNCH, 0x000000);
@@ -67,28 +63,7 @@ void vMax30003RegRead(uint8_t addrs, uint8_t *data_buffer) {
 			GPIO_PIN_SET);
 }
 
-void vMax3003InitFormer() {
 
-	vMax30003SoftwareReset();
-	HAL_Delay(MAX3003_INIT_DELAY_TIME);
-
-	vMax30003RegWrite(CNFG_GEN, 0x081007);
-	HAL_Delay(MAX3003_INIT_DELAY_TIME);
-
-	//vMax30003RegWrite(CNFG_CAL, 0x720000);  // 0x700000
-	HAL_Delay(MAX3003_INIT_DELAY_TIME);
-
-	vMax30003RegWrite(CNFG_EMUX, 0x0B0000);
-	HAL_Delay(MAX3003_INIT_DELAY_TIME);
-
-	vMax30003RegWrite(CNFG_ECG, 0x805000); // d23 - d22 : 10 for 250sps , 00:500 sps
-	HAL_Delay(MAX3003_INIT_DELAY_TIME);
-
-	vMax30003RegWrite(CNFG_RTOR1, 0x3fc600);
-
-	vMax30003Synch();
-	HAL_Delay(MAX3003_INIT_DELAY_TIME);
-}
 
 uint32_t max30003ReadRegister(uint8_t addrs) {
 	uint32_t data = 0;
@@ -135,13 +110,16 @@ TypeDefManageDynamicModes MNG_DYN_r;
 TypeDefMuxConfiguration CNFG_MUX_r;
 
 // Global Function Definitions
+void vMax30003SoftwareReset() {
+	vMax30003RegWrite(SW_RST, 0x000000);
+}
 void vMax30003Init(void) {
 
 	// Reset ECG to clear registers
 	max30003WriteRegister(SW_RST, 0);
 
 	// General config register setting
-
+	CNFG_GEN_r.bits.fmstr = 0;
 	CNFG_GEN_r.bits.en_ecg = 1;     // Enable ECG channel
 	CNFG_GEN_r.bits.rbiasn = 1;     // Enable resistive bias on negative input
 	CNFG_GEN_r.bits.rbiasp = 1;     // Enable resistive bias on positive input
@@ -195,8 +173,6 @@ void vMax30003Init(void) {
 }
 
 void vMax30003ReadData(void) {
-	uint8_t ucatmpData[3] = { 0, 0, 0 };
-
 	// Constants
 	const int EINT_STATUS_MASK = 1 << 23;
     const int RTOR_STATUS =  1 << 10;
@@ -223,13 +199,14 @@ void vMax30003ReadData(void) {
 		if ((status & RTOR_STATUS) == RTOR_STATUS) {
 			uint32_t tempRtor=0;
 			tempRtor = max30003ReadRegister(RTOR )>>  RTOR_REG_OFFSET;
-			mMax3003Sensor.faBpm[mMax3003Sensor.ucBpmCounter] = 1.0f / ( tempRtor * RTOR_LSB_RES / 60.0f );
+
+			mMax3003Sensor.faBpm[0]  = 1.0f / ( tempRtor * RTOR_LSB_RES / 60.0f );
 			mMax3003Sensor.ucBpmCounter++;
 			if(mMax3003Sensor.ucBpmCounter>=5){
 				mMax3003Sensor.ucBpmCounter=0;
 			}
 
-			mMax3003Sensor.uiaRorVal[mMax3003Sensor.ucRorCounter] = tempRtor;
+				mMax3003Sensor.uiaRorVal[0] = tempRtor;
 			mMax3003Sensor.ucRorCounter++;
 			if(mMax3003Sensor.ucRorCounter>=5){
 				mMax3003Sensor.ucRorCounter=0;

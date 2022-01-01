@@ -107,7 +107,7 @@ void Error_Handler(void);
 #define BUTTON_SW1_Pin GPIO_PIN_4
 #define BUTTON_SW1_GPIO_Port GPIOC
 #define BUTTON_SW1_EXTI_IRQn EXTI4_IRQn
-#define LED_GREEN_Pin GPIO_PIN_0
+#define LED_GREEN_Pin GPIO_PIN_4
 #define LED_GREEN_GPIO_Port GPIOB
 #define LED_BLUE_Pin GPIO_PIN_5
 #define LED_BLUE_GPIO_Port GPIOB
@@ -128,6 +128,11 @@ void Error_Handler(void);
 #define OLED_COUNTER_TIME_OUT_MAX30102 3
 #define OLED_COUNTER_TIME_OUT_MAX30003 3
 
+#define MAX30003_BIT_POSITION 4
+#define MAX30102_BIT_POSITION 5
+#define SI7021_BIT_POSITION 6
+#define SR_BIT_POSITION 7
+
 void vSetAd8232AnalogValue(unsigned int value);
 void vSetAdcChannel(uint32_t adcChannel);
 void vSetGSRAnalogValue(uint32_t value);
@@ -138,6 +143,7 @@ uint32_t uiGetGSRHumanResistance(void);
 
 void vPrintSensorData(uint32_t data);
 void vShowOledScreenProcess(uint8_t status);
+void setActiveSensor(uint8_t data);
 //#define DEBUG_ECG
 
 extern volatile uint8_t ecgFIFOIntFlag;
@@ -145,6 +151,12 @@ extern I2C_HandleTypeDef hi2c3;
 extern UART_HandleTypeDef huart1;
 extern SPI_HandleTypeDef hspi1;
 extern uint8_t ucOledStatusFlag;
+
+extern uint8_t ucIsMax30102Active;
+extern uint8_t ucIsMax30003Active;
+extern uint8_t ucIsSi7021Active;
+extern uint8_t ucIsSRActive;
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

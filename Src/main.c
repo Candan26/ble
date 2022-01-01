@@ -141,9 +141,11 @@ void prsCheckAI() {
 	if (!ucIsResponseFinished)
 		return;
 	ucIsResponseFinished = 0;
+  
 #ifdef DEBUG_GSR
 	//uint32_t val = (unsigned int)dCalculateKalmanDataSet((double)uiGetGSRHumanResistance());
 	vPrintSensorData(uiGetGSRHumanResistance());
+
 #endif
 	HAL_ADC_Start_IT(&hadc1);
 	/*
@@ -158,7 +160,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	/* using helper macro.                                                  */
 	usADCxConvertedData_Voltage_mVolt = __ADC_CALC_DATA_VOLTAGE(VDDA_APPLI,
 			uhADCxConvertedData);
-	vSetGSRAnalogValue(usADCxConvertedData_Voltage_mVolt);
+	vSetGSRAnalogValue(uhADCxConvertedData);
 	//HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 	ucIsResponseFinished = 1;
 }
@@ -261,6 +263,7 @@ void vReadSensorData(void){
 
 }
 
+
 void vPrintSensorData(uint32_t data){
 	unsigned char text[20];
 	sprintf((char*)text,"%6d\r\n",(int)data);
@@ -344,6 +347,7 @@ void setActiveSensor(uint8_t data) {
 
 }
 
+
 /* USER CODE END 0 */
 
 /**
@@ -398,8 +402,6 @@ void setActiveSensor(uint8_t data) {
 		/* USER CODE BEGIN 3 */
 		SCH_Run(~0);
 		vReadSensorData();
-		//
-		//HAL_Delay(8);
 	}
 	/* USER CODE END 3 */
 }
@@ -499,7 +501,7 @@ static void MX_ADC1_Init(void) {
 	 */
 	hadc1.Instance = ADC1;
 	hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-	hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+	hadc1.Init.Resolution = ADC_RESOLUTION_8B;
 	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
 	hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;

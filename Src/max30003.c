@@ -230,7 +230,7 @@ void vMax30003ReadData(void) {
 				max30003WriteRegister(FIFO_RST,0); // Reset FIFO
 			}
 			// Print results
-			for (idx = 0; idx < readECGSamples; idx++) {
+
 				//mMax3003Sensor.usaDataPacketHeader[idx]= usaSinWave[idx + d*15];
 				mMax3003Sensor.usaEcgVal[mMax3003Sensor.usEcgCounter]=ecgSample[idx];
 				mMax3003Sensor.usEcgCounter++;
@@ -241,6 +241,7 @@ void vMax30003ReadData(void) {
 				if(mMax3003Sensor.usEcgCounter>=160){
 					mMax3003Sensor.usEcgCounter=0;
 				}
+
 			}
 		}
 	}else{

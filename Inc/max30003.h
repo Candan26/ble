@@ -267,6 +267,7 @@ extern volatile typedef_max3003 mMax3003Sensor;
 
 void vMax30003Init(void);
 void vMax30003ReadData(void);
+void vMax30003SoftwareReset();
 
 unsigned int uiGetMax3003ECG();
 unsigned int uiGetMax3003RR();

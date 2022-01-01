@@ -91,10 +91,14 @@ volatile static unsigned char ucAd8232AnalogConvertedValue = 0;
 volatile static unsigned short usAd8232AnalogConvertedValue = 0;
 
 volatile uint32_t uiTimer16Counter = 0;
-volatile uint8_t ucHRSensorReadFlag =0;
+volatile uint8_t ucSensorReadFlag = 0;
 volatile uint8_t ecgFIFOIntFlag = 0;
 uint8_t ucOledStatusFlag = 7;
 uint8_t ucPrintCounter=0;
+uint8_t ucIsMax30102Active = 1;
+uint8_t ucIsMax30003Active = 1;
+uint8_t ucIsSi7021Active = 1;
+uint8_t ucIsSRActive = 1;
 
 unsigned int ADC_TIMEOUT = 300;
 unsigned char ucIsResponseFinished = 1;
@@ -138,19 +142,8 @@ void prsCheckAI() {
 		return;
 	ucIsResponseFinished = 0;
 #ifdef DEBUG_GSR
-
-	uint32_t val = (unsigned int)dCalculateKalmanDataSet((double)uiGetGSRHumanResistance());
-	vPrintSensorData(val);
-	/*
-	groveGsrCounter++;
-	groveVal = groveVal + uiGetGSRHumanResistance();
-	if(groveGsrCounter>= 1 ){
-		printSensorData(groveVal/2);
-		groveVal=0;
-		groveGsrCounter = 0;
-	}
-	*/
-
+	//uint32_t val = (unsigned int)dCalculateKalmanDataSet((double)uiGetGSRHumanResistance());
+	vPrintSensorData(uiGetGSRHumanResistance());
 #endif
 	HAL_ADC_Start_IT(&hadc1);
 	/*
@@ -172,19 +165,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM16) {
-		/*
-		uiTimer16Counter++; // counter for AD8232
-		if (uiTimer16Counter >= 9) {
-			uiTimer16Counter = 0;
-			//prsCheckAI();
-			//vSi7021ProcessHumidityAndTemperature();
-			//vTsl2561ProcessLuminity();
-			//vMax30003ReadData();
-			//vMax30102ReadData();
-		}
-		*/
-		//prsCheckAI();
-		ucHRSensorReadFlag = 1;
+		ucSensorReadFlag = 1;
 	}
 }
 
@@ -196,8 +177,8 @@ void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin )
 }
 
 void initTimer() {
-	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	//HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 	//timer 4 for uart packet checking with 10 ms interval for 32 mHz
 	htim16.Instance = TIM16;
 	htim16.Init.Prescaler = 20;//4
@@ -266,11 +247,14 @@ void vSetAdcChannel(uint32_t adcChannel){
 }
 
 void vReadSensorData(void){
-	if(ucHRSensorReadFlag == 1){
-		vSi7021ProcessHumidityAndTemperature();
-		vMax30003ReadData();
-		vMax30102ReadData();
-		ucHRSensorReadFlag=0;
+	if(ucSensorReadFlag == 1){
+		if(ucIsSi7021Active)
+			vSi7021ProcessHumidityAndTemperature();
+		if(ucIsMax30003Active)
+			vMax30003ReadData();
+		if(ucIsMax30102Active)
+			vMax30102ReadData();
+		ucSensorReadFlag=0;
 		HAL_ADC_Start_DMA(&hadc1,&uiGSRRawData,1);
 		vShowOledScreenProcess(ucOledStatusFlag);
 	}
@@ -307,7 +291,6 @@ void vShowOledScreenProcess(uint8_t status) {
 		}
 	} else if (status == OLED_STATUS_MAX30102) {
 		if (ucPrintCounter >= OLED_COUNTER_TIME_OUT_MAX30102) {
-			vOledBleMaxInit30102();
 			vOledBlePrintMax30102(ucGetMax30102HR(), ucGetMax30102SPO2(),
 					usGetMax30102Diff());
 			ucPrintCounter = 0;
@@ -327,6 +310,39 @@ void vShowOledScreenProcess(uint8_t status) {
 	ucPrintCounter++;
 }
 
+void setActiveSensor(uint8_t data) {
+	if ((data >> MAX30003_BIT_POSITION) & 1U) {
+		ucIsMax30003Active = 1;
+		vMax30003Init();
+	} else {
+		ucIsMax30003Active = 0;
+		vMax30003SoftwareReset();
+	}
+
+	if ((data >> MAX30102_BIT_POSITION) & 1U) {
+		ucIsMax30102Active = 1;
+		vMax30102StartUp();
+		vMax30102Init();
+		vOledBleMaxInit30102();
+	} else {
+		ucIsMax30102Active = 0;
+		vMax30102Shutdown();
+	}
+
+	if ((data >> SI7021_BIT_POSITION) & 1U) {
+		ucIsSi7021Active = 1;
+		vInitsi7021();
+	} else {
+		ucIsSi7021Active = 0;
+	}
+
+	if ((data >> SR_BIT_POSITION) & 1U) {
+		ucIsSRActive = 1;
+	} else {
+		ucIsSRActive = 0;
+	}
+
+}
 
 /* USER CODE END 0 */
 
@@ -369,6 +385,7 @@ void vShowOledScreenProcess(uint8_t status) {
 	MX_TIM17_Init();
 	/* USER CODE BEGIN 2 */
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
 	HAL_Delay(250);
 	systemInit();
 
@@ -487,7 +504,7 @@ static void MX_ADC1_Init(void) {
 	hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	hadc1.Init.LowPowerAutoWait = DISABLE;
-	hadc1.Init.ContinuousConvMode = DISABLE;
+	hadc1.Init.ContinuousConvMode = ENABLE;
 	hadc1.Init.NbrOfConversion = 1;
 	hadc1.Init.DiscontinuousConvMode = DISABLE;
 	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -502,7 +519,7 @@ static void MX_ADC1_Init(void) {
 	 */
 	sConfig.Channel = ADC_CHANNEL_3;
 	sConfig.Rank = ADC_REGULAR_RANK_1;
-	sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+	sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
 	sConfig.SingleDiff = ADC_SINGLE_ENDED;
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;

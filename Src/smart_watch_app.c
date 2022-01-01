@@ -557,7 +557,7 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 		tmpVal.ui = mMax3003Sensor.uiaRorVal[j];
 		for(i=0;i<4;i++)
 			value[OFFSET_DATA_RR+(j*4)+(3-i)] = tmpVal.uc[i];
-		mMax3003Sensor.uiaRorVal[j]=0;
+		//mMax3003Sensor.uiaRorVal[j]=0;
 	}
 	mMax3003Sensor.ucRorCounter=0;
 
@@ -569,7 +569,7 @@ static void SMART_WATCH_DATA_Timer_Callback(void){
 		tmpVal.f = mMax3003Sensor.faBpm[j];
 		for(i=0;i<4;i++)
 			value[OFFSET_DATA_BPM+(j*4)+(3-i)] = tmpVal.uc[i];
-		mMax3003Sensor.faBpm[j]=0;
+		//mMax3003Sensor.faBpm[j]=0;
 	}
 	mMax3003Sensor.ucBpmCounter=0;
 
